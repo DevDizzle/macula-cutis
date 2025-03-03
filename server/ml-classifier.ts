@@ -51,7 +51,7 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
 
     // Build the request object using the exact format that worked in testing
     const request = {
-      name: ENDPOINT,
+      endpoint: ENDPOINT,  // Changed from 'name' to 'endpoint' to match REST API format
       instances: [
         {
           content: base64Image,
