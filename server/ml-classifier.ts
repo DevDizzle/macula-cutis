@@ -1,19 +1,55 @@
 import { PredictionServiceClient } from "@google-cloud/aiplatform";
 import { createCanvas } from "canvas";
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Hardcoded endpoint path as provided
 const ENDPOINT = "projects/skin-lesion-443301/locations/us-central1/endpoints/903117960334278656";
 
+// Debug logging for credentials
+const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+console.log("Using Google credentials from:", credentialsPath);
+
+// Get absolute path and verify file exists
+const absolutePath = path.resolve(process.cwd(), credentialsPath || '');
+console.log("Absolute credentials path:", absolutePath);
+
+if (!credentialsPath || !fs.existsSync(absolutePath)) {
+  throw new Error(`Google Cloud credentials file not found at: ${absolutePath}`);
+}
+
+try {
+  // Verify we can read the credentials file
+  const credentialsContent = fs.readFileSync(absolutePath, 'utf8');
+  const credentials = JSON.parse(credentialsContent);
+  console.log("Successfully loaded credentials for service account:", credentials.client_email);
+} catch (error) {
+  console.error("Error loading credentials:", error);
+  throw new Error("Failed to load Google Cloud credentials");
+}
+
 // Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
   apiEndpoint: 'us-central1-aiplatform.googleapis.com',
-  projectId: "skin-lesion-443301",
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
+  keyFilename: absolutePath
 });
 
 /**
+ * Utility: Extracts raw Base64 data from a Data URL if present.
+ * If the string starts with "data:image/...", it returns the part after the comma.
+ * Otherwise, returns the string unchanged.
+ */
+function extractBase64(imageData: string): string {
+  if (imageData.startsWith("data:image/")) {
+    const parts = imageData.split(",");
+    return parts.length > 1 ? parts[1] : imageData;
+  }
+  return imageData;
+}
+
+/**
  * Classify an uploaded image using Vertex AI AutoML
- * @param {string} imageData - Base64 encoded image data
+ * @param {string} imageData - Base64 encoded image data (with or without data URI prefix)
  * @returns {Promise<{ label: string, confidence: number }>}
  */
 export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
@@ -21,26 +57,34 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     console.log("\n=== Starting Image Classification ===");
     console.log("Using endpoint:", ENDPOINT);
 
-    // Remove any Base64 prefix if present and get just the Base64 data
-    const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
-    console.log("Base64 Image length:", base64Image.length);
-    console.log("First 50 chars of base64:", base64Image.substring(0, 50));
+    // Extract raw Base64 string
+    const rawBase64 = extractBase64(imageData);
+    console.log("Raw Base64 length:", rawBase64.length);
+    console.log("First 50 chars of raw Base64:", rawBase64.substring(0, 50));
 
-    // Build the request object according to Vertex AI specifications
+    // Build the request object using the format matching the Deploy & Test tool.
+    // Here, the image data is wrapped in an "image" object with "bytesBase64Encoded"
     const request = {
-      endpoint: ENDPOINT,
+      name: ENDPOINT,
       instances: [
         {
-          content: base64Image
+          image: {
+            bytesBase64Encoded: rawBase64
+          }
         }
-      ]
+      ],
+      parameters: {
+        confidenceThreshold: 0.5
+      }
     };
 
-    // Log the request (masking the base64 content)
+    // Log the request object (masking the Base64 content)
     console.log("\nRequest being sent to Vertex AI:");
     console.log(JSON.stringify({
       ...request,
-      instances: [{ content: `[Base64 string of length ${base64Image.length}]` }]
+      instances: [
+        { image: { bytesBase64Encoded: `[Base64 string of length ${rawBase64.length}]` } }
+      ]
     }, null, 2));
 
     // Call Vertex AI for prediction
@@ -55,7 +99,7 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     const prediction = response.predictions[0];
     console.log("\nParsed prediction:", prediction);
 
-    // Extract prediction results
+    // Extract and return the prediction results
     return {
       label: prediction.displayNames?.[0] || "unknown",
       confidence: prediction.confidences?.[0] || 0
@@ -63,6 +107,15 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
   } catch (error: any) {
     console.error("\n=== Error in classifyImage ===");
     console.error("Error object:", error);
+    console.error("Error details:", {
+      code: error.code,
+      details: error.details,
+      metadata: error.metadata,
+      status: error.status,
+      reason: error.reason,
+      domain: error.domain,
+      errorInfoMetadata: error.errorInfoMetadata
+    });
     throw new Error(`Failed to classify image: ${error.message}`);
   }
 }
