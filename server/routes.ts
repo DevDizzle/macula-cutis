@@ -10,18 +10,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/analyze", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
-    const parsed = insertAnalysisSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json(parsed.error);
-    }
 
-    const { imageData } = parsed.data;
-    
     try {
+      console.log("Starting analysis request...");
+      const parsed = insertAnalysisSchema.safeParse(req.body);
+      if (!parsed.success) {
+        console.error("Validation error:", parsed.error);
+        return res.status(400).json(parsed.error);
+      }
+
+      const { imageData } = parsed.data;
+      console.log("Image data received, length:", imageData.length);
+
       const prediction = await classifyImage(imageData);
+      console.log("Prediction received:", prediction);
+
       const heatmap = await generateHeatmap(imageData);
-      
+      console.log("Heatmap generated");
+
       const analysis = await storage.createAnalysis({
         userId: req.user!.id,
         imageData,
@@ -30,15 +36,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         heatmapData: heatmap,
       });
 
+      console.log("Analysis saved:", analysis.id);
       res.json(analysis);
     } catch (error) {
-      res.status(500).json({ message: "Analysis failed" });
+      console.error("Error in /api/analyze:", error);
+      res.status(500).json({ 
+        message: "Analysis failed",
+        error: error.message 
+      });
     }
   });
 
   app.get("/api/analyses", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     const analyses = await storage.getAnalysesByUserId(req.user!.id);
     res.json(analyses);
   });

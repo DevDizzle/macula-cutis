@@ -22,46 +22,51 @@ const endpointClient = new EndpointServiceClient({
   projectId: PROJECT_ID,
 });
 
-// Construct the full endpoint name
-const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
+// Construct the full endpoint path
+const endpointPath = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
 
 export async function classifyImage(
   imageData: string
 ): Promise<{ label: string; confidence: number }> {
   try {
+    console.log("Starting image classification...");
+
     // Remove the "data:image/..." prefix if present
     const base64Image = imageData.split(",")[1] || imageData;
 
-    // Make prediction request using the correct method signature
-    const [response] = await endpointClient.predict({
-      name: endpoint,
-      payload: {
-        instances: [
-          {
-            content: base64Image,
-          },
-        ],
-      },
-    });
+    console.log("Making prediction request to Vertex AI...");
+    const request = {
+      endpoint: endpointPath,
+      instances: [
+        {
+          content: base64Image
+        }
+      ]
+    };
+
+    const [response] = await endpointClient.predict(request);
+    console.log("Received response:", JSON.stringify(response, null, 2));
 
     if (!response.predictions || !response.predictions[0]) {
       throw new Error("No predictions returned from the model");
     }
 
     const prediction = response.predictions[0];
-    return {
+    const result = {
       label: prediction.displayNames?.[0] || "unknown",
-      confidence: prediction.confidenceScores?.[0] || 0,
+      confidence: prediction.confidenceScores?.[0] || 0
     };
+
+    console.log("Prediction result:", result);
+    return result;
   } catch (error) {
-    console.error("Error making prediction:", error);
-    throw new Error("Failed to classify image");
+    console.error("Error in classifyImage:", error);
+    throw new Error(`Failed to classify image: ${error.message}`);
   }
 }
 
 export async function generateHeatmap(imageData: string): Promise<string> {
   // For now, we'll return a simple overlay until we implement SHAP
-  // The actual SHAP implementation will be added later
   const canvas = createCanvas(224, 224);
   const ctx = canvas.getContext("2d");
 
