@@ -3,10 +3,8 @@ import { createCanvas } from "canvas";
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Project configuration
-const PROJECT_ID = "skin-lesion-443301";
-const LOCATION = "us-central1";
-const ENDPOINT_ID = "903117960334278656";
+// Hardcoded endpoint path as provided
+const ENDPOINT_PATH = "projects/skin-lesion-443301/locations/us-central1/endpoints/903117960334278656";
 
 // Debug logging for credentials
 const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
@@ -32,47 +30,48 @@ try {
 
 // Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
-  apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
+  apiEndpoint: 'us-central1-aiplatform.googleapis.com',
   keyFilename: absolutePath
 });
 
 /**
  * Classify an uploaded image using Vertex AI AutoML
  * @param {string} imageData - Base64 encoded image data
- * @returns {Promise<{ label: string, confidence: number }>}
+ * @returns {Promise<{ label: string; confidence: number }>}
  */
 export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
   try {
     console.log("\n=== Starting Image Classification ===");
-    console.log("Project Configuration:");
-    console.log(`- Project ID: ${PROJECT_ID}`);
-    console.log(`- Location: ${LOCATION}`);
-    console.log(`- Endpoint ID: ${ENDPOINT_ID}`);
+    console.log("Using endpoint:", ENDPOINT_PATH);
 
-    // Remove any Base64 prefix if present
+    // Remove any Base64 prefix if present and ensure proper formatting
     const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
     console.log("Base64 Image length:", base64Image.length);
     console.log("First 50 chars of base64:", base64Image.substring(0, 50));
 
-    // Build the endpoint path using the helper function
-    const endpoint = predictionClient.endpointPath(PROJECT_ID, LOCATION, ENDPOINT_ID);
-    console.log("\nGenerated Endpoint Path:", endpoint);
-
-    // Format request according to Vertex AI specifications
+    // Build request according to the latest Vertex AI format
     const request = {
-      endpoint,
+      name: ENDPOINT_PATH,
       instances: [
         {
-          content: base64Image
+          image: {
+            bytesBase64Encoded: base64Image
+          }
         }
-      ]
+      ],
+      parameters: {
+        confidenceThreshold: 0.5,
+        maxPredictions: 1
+      }
     };
 
     // Log the complete request object (masking the base64 content)
     console.log("\nRequest being sent to Vertex AI:");
     console.log(JSON.stringify({
       ...request,
-      instances: [{ content: `[Base64 string of length ${base64Image.length}]` }]
+      instances: [{ 
+        image: { bytesBase64Encoded: `[Base64 string of length ${base64Image.length}]` }
+      }]
     }, null, 2));
 
     // Call Vertex AI for prediction
@@ -87,7 +86,6 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     const prediction = response.predictions[0];
     console.log("\nParsed prediction:", prediction);
 
-    // Extract and return the prediction results
     return {
       label: prediction.displayNames?.[0] || "unknown",
       confidence: prediction.confidences?.[0] || 0
@@ -98,7 +96,7 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     console.error("Error details:", {
       code: error.code,
       details: error.details,
-      metadata: error.metadata,
+      metadata: error.metadata?.internalRepr ? Object.fromEntries(error.metadata.internalRepr) : error.metadata,
       status: error.status,
       reason: error.reason,
       domain: error.domain,
