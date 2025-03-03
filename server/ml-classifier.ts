@@ -3,10 +3,8 @@ import { createCanvas } from "canvas";
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Project configuration
-const PROJECT_ID = "skin-lesion-443301";
-const LOCATION = "us-central1";
-const ENDPOINT_ID = "903117960334278656";
+// Hardcoded endpoint path as provided
+const ENDPOINT = "projects/skin-lesion-443301/locations/us-central1/endpoints/903117960334278656";
 
 // Debug logging for credentials
 const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
@@ -32,7 +30,7 @@ try {
 
 // Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
-  apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
+  apiEndpoint: 'us-central1-aiplatform.googleapis.com',
   keyFilename: absolutePath
 });
 
@@ -44,23 +42,16 @@ const predictionClient = new PredictionServiceClient({
 export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
   try {
     console.log("\n=== Starting Image Classification ===");
-    console.log("Project Configuration:");
-    console.log(`- Project ID: ${PROJECT_ID}`);
-    console.log(`- Location: ${LOCATION}`);
-    console.log(`- Endpoint ID: ${ENDPOINT_ID}`);
+    console.log("Using endpoint:", ENDPOINT);
 
     // Remove any Base64 prefix if present
     const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
     console.log("Base64 Image length:", base64Image.length);
     console.log("First 50 chars of base64:", base64Image.substring(0, 50));
 
-    // Build the endpoint path using the helper function
-    const endpoint = predictionClient.endpointPath(PROJECT_ID, LOCATION, ENDPOINT_ID);
-    console.log("\nGenerated Endpoint Path:", endpoint);
-
-    // Format request according to Vertex AI specifications
+    // Build the request object using the hardcoded endpoint
     const request = {
-      endpoint,
+      endpoint: ENDPOINT,
       instances: [
         {
           content: base64Image
