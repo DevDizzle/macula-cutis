@@ -49,26 +49,36 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     // Remove any Base64 prefix if present
     const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
 
-    // Construct the full endpoint path
-    const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
+    // Build the full endpoint resource name using the helper function
+    const endpoint = predictionClient.endpointPath(PROJECT_ID, LOCATION, ENDPOINT_ID);
+
+    // Alternatively, if the model expects the image wrapped inside an "image" object, try this:
+    // const instances = [ { image: { bytesBase64Encoded: base64Image } } ];
+    // Otherwise, if your model expects a top-level "content" field:
+    const instances = [
+      {
+        content: base64Image
+      }
+    ];
 
     // Format request according to Vertex AI specifications:
-    // - Use the 'name' field instead of 'endpoint'
-    // - Structure the instances array as expected by the model
+    // - Use the 'endpoint' field (not 'name')
+    // - Provide the instance(s) as above.
+    // - Use only the parameters your model expects.
     const request = {
-      name: endpoint,
-      instances: [
-        {
-          bytesBase64Encoded: base64Image
-        }
-      ]
+      endpoint: endpoint,
+      instances: instances,
+      parameters: {
+        confidenceThreshold: 0.5
+      }
     };
 
     console.log("Making prediction request to Vertex AI...");
     console.log("Endpoint:", endpoint);
     console.log("Request structure:", JSON.stringify({
       ...request,
-      instances: [{ bytesBase64Encoded: 'BASE64_STRING_TRUNCATED' }]
+      // Avoid printing the full base64 string
+      instances: [{ content: 'BASE64_STRING_TRUNCATED' }]
     }, null, 2));
 
     // Call Vertex AI for prediction
