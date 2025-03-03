@@ -25,12 +25,14 @@ const predictionClient = new PredictionServiceClient({
 // Construct the full endpoint path
 const endpointPath = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
 
-export async function classifyImage(
-  imageData: string
-): Promise<{ label: string; confidence: number }> {
+/**
+ * Classify an uploaded image using Vertex AI AutoML
+ * @param {string} imageData - Base64 encoded image data
+ * @returns {Promise<{ label: string, confidence: number }>}
+ */
+export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
   try {
     console.log("Starting image classification...");
-    console.log("Using endpoint:", endpointPath);
 
     // Remove the "data:image/..." prefix if present
     const base64Image = imageData.split(",")[1] || imageData;
@@ -39,7 +41,6 @@ export async function classifyImage(
     const request = {
       endpoint: endpointPath,
       instances: [{ content: base64Image }],
-      parameters: { confidenceThreshold: 0.5 }
     };
 
     // Call Vertex AI for prediction
@@ -62,6 +63,11 @@ export async function classifyImage(
   }
 }
 
+/**
+ * Generate a placeholder heatmap (for SHAP/Grad-CAM)
+ * @param {string} imageData - Base64 encoded image data
+ * @returns {Promise<string>} - Heatmap overlay as a Base64 image
+ */
 export async function generateHeatmap(imageData: string): Promise<string> {
   const canvas = createCanvas(224, 224);
   const ctx = canvas.getContext("2d");
