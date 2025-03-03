@@ -3,7 +3,7 @@ import { createCanvas } from "canvas";
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Google Cloud Project Details
+// Project configuration
 const PROJECT_ID = "skin-lesion-443301";
 const LOCATION = "us-central1";
 const ENDPOINT_ID = "903117960334278656";
@@ -32,7 +32,6 @@ try {
 
 // Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
-  projectId: PROJECT_ID,
   apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
   keyFilename: absolutePath
 });
@@ -44,56 +43,66 @@ const predictionClient = new PredictionServiceClient({
  */
 export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
   try {
-    console.log("Starting image classification...");
+    console.log("\n=== Starting Image Classification ===");
+    console.log("Project Configuration:");
+    console.log(`- Project ID: ${PROJECT_ID}`);
+    console.log(`- Location: ${LOCATION}`);
+    console.log(`- Endpoint ID: ${ENDPOINT_ID}`);
 
     // Remove any Base64 prefix if present
     const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
+    console.log("Base64 Image length:", base64Image.length);
+    console.log("First 50 chars of base64:", base64Image.substring(0, 50));
 
-    // Format request according to Vertex AI specifications:
-    // Using the endpoint in 'name' field as per API requirements
+    // Build the endpoint path using the helper function
+    const endpoint = predictionClient.endpointPath(PROJECT_ID, LOCATION, ENDPOINT_ID);
+    console.log("\nGenerated Endpoint Path:", endpoint);
+
+    // Format request according to Vertex AI specifications
     const request = {
-      name: `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`,
+      endpoint,
       instances: [
         {
           content: base64Image
         }
-      ],
-      parameters: {
-        confidenceThreshold: 0.5,
-        maxPredictions: 1
-      }
+      ]
     };
 
-    console.log("Making prediction request to Vertex AI...");
-    console.log("Request path:", request.name);
-    console.log("Request structure:", JSON.stringify({
+    // Log the complete request object (masking the base64 content)
+    console.log("\nRequest being sent to Vertex AI:");
+    console.log(JSON.stringify({
       ...request,
-      instances: [{ content: 'BASE64_STRING_TRUNCATED' }]
+      instances: [{ content: `[Base64 string of length ${base64Image.length}]` }]
     }, null, 2));
 
     // Call Vertex AI for prediction
+    console.log("\nMaking prediction request...");
     const [response] = await predictionClient.predict(request);
-    console.log("Raw response:", JSON.stringify(response, null, 2));
+    console.log("\nRaw response:", JSON.stringify(response, null, 2));
 
     if (!response.predictions || response.predictions.length === 0) {
       throw new Error("No predictions returned from the model");
     }
 
     const prediction = response.predictions[0];
-    console.log("Parsed prediction:", prediction);
+    console.log("\nParsed prediction:", prediction);
 
-    // Extract prediction results
+    // Extract and return the prediction results
     return {
       label: prediction.displayNames?.[0] || "unknown",
       confidence: prediction.confidences?.[0] || 0
     };
   } catch (error: any) {
-    console.error("Error in classifyImage:", error);
+    console.error("\n=== Error in classifyImage ===");
+    console.error("Error object:", error);
     console.error("Error details:", {
       code: error.code,
       details: error.details,
       metadata: error.metadata,
-      status: error.status
+      status: error.status,
+      reason: error.reason,
+      domain: error.domain,
+      errorInfoMetadata: error.errorInfoMetadata
     });
     throw new Error(`Failed to classify image: ${error.message}`);
   }
