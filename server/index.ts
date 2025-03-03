@@ -1,6 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { join } from "path";
+
+// Set Google Cloud credentials path
+process.env.GOOGLE_APPLICATION_CREDENTIALS = join(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || "attached_assets/skin-lesion-443301-9fd70b8d7c77.json");
+console.log("Using Google credentials from:", process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
 const app = express();
 // Increase request size limits to 50MB
