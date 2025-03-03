@@ -1,56 +1,73 @@
-import * as tf from "@tensorflow/tfjs-node";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { EndpointServiceClient } from "@google-cloud/aiplatform";
+import { createCanvas } from 'canvas';
 
-let model: tf.LayersModel | null = null;
+// Google Cloud Project Details
+const PROJECT_ID = "skin-lesion-443301";
+const LOCATION = "us-central1";
+const ENDPOINT_ID = "skin_lesion_v1";
 
-async function loadModel() {
-  if (!model) {
-    model = await tf.loadLayersModel(
-      "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json"
-    );
+// Load credentials from the JSON file
+const credentials = JSON.parse(
+  readFileSync(
+    join(process.cwd(), "attached_assets/skin-lesion-443301-9fd70b8d7c77.json"),
+    "utf-8"
+  )
+);
+
+// Initialize Vertex AI client
+const endpointClient = new EndpointServiceClient({
+  credentials,
+  projectId: PROJECT_ID,
+});
+
+// Construct the full endpoint name
+const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
+
+export async function classifyImage(
+  imageData: string
+): Promise<{ label: string; confidence: number }> {
+  try {
+    // Remove the "data:image/..." prefix if present
+    const base64Image = imageData.split(",")[1] || imageData;
+
+    // Make prediction request using the correct method signature
+    const [response] = await endpointClient.predict({
+      name: endpoint,
+      payload: {
+        instances: [
+          {
+            content: base64Image,
+          },
+        ],
+      },
+    });
+
+    if (!response.predictions || !response.predictions[0]) {
+      throw new Error("No predictions returned from the model");
+    }
+
+    const prediction = response.predictions[0];
+    return {
+      label: prediction.displayNames?.[0] || "unknown",
+      confidence: prediction.confidenceScores?.[0] || 0,
+    };
+  } catch (error) {
+    console.error("Error making prediction:", error);
+    throw new Error("Failed to classify image");
   }
-  return model;
-}
-
-export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
-  const model = await loadModel();
-  
-  // Convert base64 to buffer
-  const buffer = Buffer.from(imageData.split(',')[1], 'base64');
-  
-  // Load image using TensorFlow Node
-  const tensor = tf.node.decodeImage(buffer)
-    .resizeNearestNeighbor([224, 224])
-    .toFloat()
-    .expandDims();
-
-  // Get prediction
-  const prediction = await model.predict(tensor) as tf.Tensor;
-  const data = await prediction.data();
-  
-  // Get highest confidence class
-  const maxIndex = data.indexOf(Math.max(...Array.from(data)));
-  
-  // Cleanup
-  tensor.dispose();
-  prediction.dispose();
-
-  // Simple classification for demo
-  const labels = ["benign", "malignant"];
-  return {
-    label: labels[maxIndex % 2],
-    confidence: data[maxIndex],
-  };
 }
 
 export async function generateHeatmap(imageData: string): Promise<string> {
-  // For demo purposes, return a base64 encoded red overlay
-  // In a real application, this would use SHAP or similar for actual heatmap generation
+  // For now, we'll return a simple overlay until we implement SHAP
+  // The actual SHAP implementation will be added later
   const canvas = createCanvas(224, 224);
-  const ctx = canvas.getContext('2d');
-  
-  // Draw red overlay
+  const ctx = canvas.getContext("2d");
+
+  // Draw red overlay for areas of interest (placeholder)
   ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
-  ctx.fillRect(56, 56, 112, 112); // Center 50% of the image
-  
+  ctx.fillRect(56, 56, 112, 112);
+
   return canvas.toDataURL();
 }
