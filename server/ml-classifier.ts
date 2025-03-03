@@ -49,21 +49,24 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     console.log("Base64 Image length:", base64Image.length);
     console.log("First 50 chars of base64:", base64Image.substring(0, 50));
 
-    // Build the request object using the hardcoded endpoint
+    // Build the request object using the exact format that worked in testing
     const request = {
-      endpoint: ENDPOINT,
+      name: ENDPOINT,
       instances: [
         {
-          content: base64Image
+          content: base64Image,
+          mimeType: "image/jpeg"
         }
       ]
     };
 
-    // Log the complete request object (masking the base64 content)
+    // Log the request (masking the base64 content)
     console.log("\nRequest being sent to Vertex AI:");
     console.log(JSON.stringify({
       ...request,
-      instances: [{ content: `[Base64 string of length ${base64Image.length}]` }]
+      instances: [
+        { content: `[Base64 string of length ${base64Image.length}]`, mimeType: "image/jpeg" }
+      ]
     }, null, 2));
 
     // Call Vertex AI for prediction
