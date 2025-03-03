@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
-import { EndpointServiceClient } from "@google-cloud/aiplatform";
-import { createCanvas } from 'canvas';
+import { PredictionServiceClient } from "@google-cloud/aiplatform";
+import { createCanvas } from "canvas";
 
 // Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
@@ -16,8 +16,8 @@ const credentials = JSON.parse(
   )
 );
 
-// Initialize Vertex AI client
-const endpointClient = new EndpointServiceClient({
+// Initialize Vertex AI Prediction Client
+const predictionClient = new PredictionServiceClient({
   credentials,
   projectId: PROJECT_ID,
 });
@@ -37,28 +37,23 @@ export async function classifyImage(
     console.log("Making prediction request to Vertex AI...");
     const request = {
       endpoint: endpointPath,
-      instances: [
-        {
-          content: base64Image
-        }
-      ]
+      instances: [{ content: base64Image }],
     };
 
-    const [response] = await endpointClient.predict(request);
+    // Call Vertex AI for prediction
+    const [response] = await predictionClient.predict(request);
     console.log("Received response:", JSON.stringify(response, null, 2));
 
-    if (!response.predictions || !response.predictions[0]) {
+    if (!response.predictions || !response.predictions.length) {
       throw new Error("No predictions returned from the model");
     }
 
     const prediction = response.predictions[0];
-    const result = {
-      label: prediction.displayNames?.[0] || "unknown",
-      confidence: prediction.confidenceScores?.[0] || 0
-    };
 
-    console.log("Prediction result:", result);
-    return result;
+    return {
+      label: prediction.displayNames?.[0] || "unknown",
+      confidence: prediction.confidenceScores?.[0] || 0,
+    };
   } catch (error) {
     console.error("Error in classifyImage:", error);
     throw new Error(`Failed to classify image: ${error.message}`);
@@ -66,7 +61,6 @@ export async function classifyImage(
 }
 
 export async function generateHeatmap(imageData: string): Promise<string> {
-  // For now, we'll return a simple overlay until we implement SHAP
   const canvas = createCanvas(224, 224);
   const ctx = canvas.getContext("2d");
 
