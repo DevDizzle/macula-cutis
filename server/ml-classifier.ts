@@ -1,16 +1,23 @@
 import { PredictionServiceClient } from "@google-cloud/aiplatform";
 import { createCanvas } from "canvas";
+import * as fs from 'fs';
 
 // Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
 const LOCATION = "us-central1";
 const ENDPOINT_ID = "903117960334278656";
 
+// Debug logging for credentials
+const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+console.log("Using Google credentials from:", credentialsPath);
+
+if (!credentialsPath || !fs.existsSync(credentialsPath)) {
+  throw new Error(`Google Cloud credentials file not found at: ${credentialsPath}`);
+}
+
 // Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
-  projectId: PROJECT_ID,
-  apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
+  keyFilename: credentialsPath
 });
 
 /**
@@ -30,7 +37,7 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
 
     // Format request according to Vertex AI specifications
     const request = {
-      name: endpoint,
+      endpoint,
       instances: [
         {
           image: {
@@ -42,7 +49,12 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
 
     console.log("Making prediction request to Vertex AI...");
     console.log("Endpoint:", endpoint);
-    console.log("Request format:", JSON.stringify(request, null, 2));
+    console.log("Request structure:", JSON.stringify({
+      ...request,
+      instances: [{
+        image: { bytesBase64Encoded: 'BASE64_STRING_TRUNCATED' }
+      }]
+    }, null, 2));
 
     // Call Vertex AI for prediction
     const [response] = await predictionClient.predict(request);
