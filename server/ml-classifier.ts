@@ -24,24 +24,27 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
   try {
     console.log("Starting image classification...");
 
-    // Remove any Base64 prefix if present
+    // Remove any Base64 prefix if present and decode
     const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
 
-    // Prepare the prediction request according to Vertex AI specifications
-    const request = {
-      endpoint: endpointPath,
-      instances: [{
-        content: base64Image,
-        mimeType: "image/jpeg"
-      }],
-      parameters: {
-        confidenceThreshold: 0.5,
-        maxPredictions: 1
+    // Format the request according to Vertex AI Image Classification requirements
+    const instance = {
+      structValue: {
+        fields: {
+          image: {
+            stringValue: base64Image
+          }
+        }
       }
     };
 
+    const request = {
+      name: endpointPath,
+      instances: [instance]
+    };
+
     console.log("Making prediction request to Vertex AI...");
-    console.log("Endpoint:", endpointPath);
+    console.log("Request format:", JSON.stringify(request, null, 2));
 
     // Call Vertex AI for prediction
     const [response] = await predictionClient.predict(request);
@@ -52,7 +55,9 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     }
 
     const prediction = response.predictions[0];
+    console.log("Parsed prediction:", prediction);
 
+    // Extract prediction results
     return {
       label: prediction.displayNames?.[0] || "unknown",
       confidence: prediction.confidences?.[0] || 0
