@@ -6,14 +6,12 @@ const PROJECT_ID = "skin-lesion-443301";
 const LOCATION = "us-central1";
 const ENDPOINT_ID = "903117960334278656";
 
-// Initialize Google Cloud AI Prediction Client with explicit project
+// Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
   projectId: PROJECT_ID,
-  apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`
+  apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
 });
-
-// Construct the full endpoint path for predictions
-const endpointPath = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
 
 /**
  * Classify an uploaded image using Vertex AI AutoML
@@ -27,23 +25,23 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     // Remove any Base64 prefix if present and decode
     const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
 
-    // Format the request according to Vertex AI Image Classification requirements
-    const instance = {
-      structValue: {
-        fields: {
+    // Construct the full endpoint path
+    const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
+
+    // Format request according to Vertex AI specifications
+    const request = {
+      name: endpoint,
+      instances: [
+        {
           image: {
-            stringValue: base64Image
+            bytesBase64Encoded: base64Image
           }
         }
-      }
-    };
-
-    const request = {
-      name: endpointPath,
-      instances: [instance]
+      ]
     };
 
     console.log("Making prediction request to Vertex AI...");
+    console.log("Endpoint:", endpoint);
     console.log("Request format:", JSON.stringify(request, null, 2));
 
     // Call Vertex AI for prediction
