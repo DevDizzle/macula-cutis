@@ -3,37 +3,17 @@ import { createCanvas } from "canvas";
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Project configuration
+// Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
 const LOCATION = "us-central1";
 const ENDPOINT_ID = "903117960334278656";
 
-// Debug logging for credentials
-const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-console.log("Using Google credentials from:", credentialsPath);
-
-// Get absolute path and verify file exists
-const absolutePath = path.resolve(process.cwd(), credentialsPath || '');
-console.log("Absolute credentials path:", absolutePath);
-
-if (!credentialsPath || !fs.existsSync(absolutePath)) {
-  throw new Error(`Google Cloud credentials file not found at: ${absolutePath}`);
-}
-
-try {
-  // Verify we can read the credentials file
-  const credentialsContent = fs.readFileSync(absolutePath, 'utf8');
-  const credentials = JSON.parse(credentialsContent);
-  console.log("Successfully loaded credentials for service account:", credentials.client_email);
-} catch (error) {
-  console.error("Error loading credentials:", error);
-  throw new Error("Failed to load Google Cloud credentials");
-}
-
 // Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
+  projectId: PROJECT_ID,
   apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
-  keyFilename: absolutePath
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  scopes: ['https://www.googleapis.com/auth/cloud-platform']
 });
 
 /**
@@ -43,66 +23,58 @@ const predictionClient = new PredictionServiceClient({
  */
 export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
   try {
-    console.log("\n=== Starting Image Classification ===");
-    console.log("Project Configuration:");
-    console.log(`- Project ID: ${PROJECT_ID}`);
-    console.log(`- Location: ${LOCATION}`);
-    console.log(`- Endpoint ID: ${ENDPOINT_ID}`);
+    console.log("Starting image classification...");
 
     // Remove any Base64 prefix if present
     const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
-    console.log("Base64 Image length:", base64Image.length);
-    console.log("First 50 chars of base64:", base64Image.substring(0, 50));
 
-    // Build the endpoint path using the helper function
-    const endpoint = predictionClient.endpointPath(PROJECT_ID, LOCATION, ENDPOINT_ID);
-    console.log("\nGenerated Endpoint Path:", endpoint);
+    // Construct the endpoint path
+    const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
 
-    // Format request according to Vertex AI specifications
+    // Format request according to the working test configuration
     const request = {
       endpoint,
       instances: [
         {
-          content: base64Image
+          content: base64Image,
+          mimeType: "image/jpeg"
         }
-      ]
+      ],
+      parameters: {
+        confidenceThreshold: 0.5,
+        maxPredictions: 1
+      }
     };
 
-    // Log the complete request object (masking the base64 content)
-    console.log("\nRequest being sent to Vertex AI:");
-    console.log(JSON.stringify({
+    console.log("Making prediction request to Vertex AI...");
+    console.log("Request structure:", JSON.stringify({
       ...request,
-      instances: [{ content: `[Base64 string of length ${base64Image.length}]` }]
+      instances: [{ content: "[BASE64_CONTENT_TRUNCATED]", mimeType: "image/jpeg" }]
     }, null, 2));
 
     // Call Vertex AI for prediction
-    console.log("\nMaking prediction request...");
     const [response] = await predictionClient.predict(request);
-    console.log("\nRaw response:", JSON.stringify(response, null, 2));
+    console.log("Raw response:", JSON.stringify(response, null, 2));
 
     if (!response.predictions || response.predictions.length === 0) {
       throw new Error("No predictions returned from the model");
     }
 
     const prediction = response.predictions[0];
-    console.log("\nParsed prediction:", prediction);
+    console.log("Parsed prediction:", prediction);
 
-    // Extract and return the prediction results
+    // Extract prediction results based on observed response format
     return {
       label: prediction.displayNames?.[0] || "unknown",
       confidence: prediction.confidences?.[0] || 0
     };
   } catch (error: any) {
-    console.error("\n=== Error in classifyImage ===");
-    console.error("Error object:", error);
+    console.error("Error in classifyImage:", error);
     console.error("Error details:", {
       code: error.code,
       details: error.details,
       metadata: error.metadata,
-      status: error.status,
-      reason: error.reason,
-      domain: error.domain,
-      errorInfoMetadata: error.errorInfoMetadata
+      status: error.status
     });
     throw new Error(`Failed to classify image: ${error.message}`);
   }

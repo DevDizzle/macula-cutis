@@ -2,12 +2,12 @@ import { PredictionServiceClient } from "@google-cloud/aiplatform";
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Hardcode the exact endpoint string
+// Use the exact endpoint string as provided
 const ENDPOINT = "projects/skin-lesion-443301/locations/us-central1/endpoints/903117960334278656";
 
 (async () => {
   try {
-    // Initialize the prediction client
+    // Initialize the client with full configuration
     const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
     console.log("Using credentials from:", credentialsPath);
 
@@ -18,20 +18,23 @@ const ENDPOINT = "projects/skin-lesion-443301/locations/us-central1/endpoints/90
     console.log("- Project ID:", credentials.project_id);
     console.log("- Client Email:", credentials.client_email);
 
+    // Initialize with full configuration
     const predictionClient = new PredictionServiceClient({
-      apiEndpoint: 'us-central1-aiplatform.googleapis.com'
+      projectId: credentials.project_id,
+      apiEndpoint: 'us-central1-aiplatform.googleapis.com',
+      keyFilename: credentialsPath
     });
 
-    // Read test image data
+    // Read and prepare the image data
     const base64FilePath = path.resolve(process.cwd(), 'attached_assets/base64.txt');
     const base64Data = fs.readFileSync(base64FilePath, 'utf8').trim();
     const base64Image = base64Data.split(",")[1] || base64Data;
 
     console.log("\nMaking prediction request with endpoint:", ENDPOINT);
 
-    // Create request with all required fields for AutoML Vision
+    // Create request using format from latest Vertex AI samples
     const request = {
-      endpoint: ENDPOINT,
+      name: ENDPOINT,
       instances: [
         {
           content: base64Image,
@@ -40,8 +43,7 @@ const ENDPOINT = "projects/skin-lesion-443301/locations/us-central1/endpoints/90
       ],
       parameters: {
         confidenceThreshold: 0.5,
-        maxPredictions: 1,
-        feature_importance: true
+        maxPredictions: 1
       }
     };
 
@@ -62,7 +64,8 @@ const ENDPOINT = "projects/skin-lesion-443301/locations/us-central1/endpoints/90
       metadata: error.metadata,
       statusDetails: error.statusDetails,
       reason: error.reason,
-      domain: error.domain
+      domain: error.domain,
+      errorInfoMetadata: error.errorInfoMetadata
     });
   }
 })();
