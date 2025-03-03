@@ -6,7 +6,7 @@ import { createCanvas } from "canvas";
 // Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
 const LOCATION = "us-central1";
-const ENDPOINT_ID = "skin_lesion_v1";
+const ENDPOINT_ID = "903117960334278656";  // Updated to correct numeric ID
 
 // Load credentials from the JSON file
 const credentials = JSON.parse(
