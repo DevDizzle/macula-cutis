@@ -6,7 +6,7 @@ import { createCanvas } from "canvas";
 // Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
 const LOCATION = "us-central1";
-const ENDPOINT_ID = "903117960334278656";  // Updated to correct numeric ID
+const ENDPOINT_ID = "903117960334278656";  // ✅ Correct Numeric ID
 
 // Load credentials from the JSON file
 const credentials = JSON.parse(
@@ -16,13 +16,13 @@ const credentials = JSON.parse(
   )
 );
 
-// Initialize Vertex AI Prediction Client
+// Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
   credentials,
   projectId: PROJECT_ID,
 });
 
-// Construct the full endpoint path
+// Corrected `endpointPath`
 const endpointPath = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
 
 /**
@@ -34,12 +34,12 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
   try {
     console.log("Starting image classification...");
 
-    // Remove the "data:image/..." prefix if present
-    const base64Image = imageData.split(",")[1] || imageData;
+    // Remove any unnecessary Base64 prefixes
+    const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
 
     console.log("Making prediction request to Vertex AI...");
     const request = {
-      endpoint: endpointPath,
+      name: endpointPath,  // ✅ Use "name" instead of "endpoint"
       instances: [{ content: base64Image }],
     };
 
@@ -47,7 +47,7 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     const [response] = await predictionClient.predict(request);
     console.log("Received response:", JSON.stringify(response, null, 2));
 
-    if (!response.predictions || !response.predictions.length) {
+    if (!response.predictions || response.predictions.length === 0) {
       throw new Error("No predictions returned from the model");
     }
 
