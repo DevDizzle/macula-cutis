@@ -49,27 +49,25 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     // Remove any Base64 prefix if present
     const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
 
-    // Construct the full endpoint path manually
-    const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
-
-    // Format request according to Vertex AI specifications
+    // Format request according to Vertex AI specifications:
+    // Using the endpoint in 'name' field as per API requirements
     const request = {
-      endpoint,
+      name: `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`,
       instances: [
         {
           content: base64Image
         }
       ],
       parameters: {
-        confidenceThreshold: 0.5
+        confidenceThreshold: 0.5,
+        maxPredictions: 1
       }
     };
 
     console.log("Making prediction request to Vertex AI...");
-    console.log("Endpoint:", endpoint);
+    console.log("Request path:", request.name);
     console.log("Request structure:", JSON.stringify({
       ...request,
-      // Avoid printing the full base64 string
       instances: [{ content: 'BASE64_STRING_TRUNCATED' }]
     }, null, 2));
 
