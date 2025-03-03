@@ -9,31 +9,75 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Analysis } from "@shared/schema";
 
+const MAX_IMAGE_SIZE = 1024 * 1024; // 1MB
+const ACCEPTED_TYPES = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png']
+};
+
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
+  const processImage = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (file.size > MAX_IMAGE_SIZE) {
+        reject(new Error("Image size must be less than 1MB"));
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = () => {
-        setSelectedImage(reader.result as string);
+        const result = reader.result as string;
+        // Ensure we have a proper base64 string
+        if (typeof result === 'string' && result.startsWith('data:image/')) {
+          resolve(result);
+        } else {
+          reject(new Error("Invalid image format"));
+        }
       };
+      reader.onerror = () => reject(new Error("Failed to read image file"));
       reader.readAsDataURL(file);
-    }
+    });
   }, []);
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      try {
+        setImageError(null);
+        const processedImage = await processImage(file);
+        setSelectedImage(processedImage);
+      } catch (error) {
+        setImageError(error.message);
+        toast({
+          title: "Image Processing Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    }
+  }, [toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { "image/*": [] },
+    accept: ACCEPTED_TYPES,
     maxFiles: 1,
+    maxSize: MAX_IMAGE_SIZE,
   });
 
   const analyzeMutation = useMutation({
     mutationFn: async () => {
       if (!selectedImage) throw new Error("No image selected");
+
+      // Verify the base64 format before sending
+      if (!selectedImage.startsWith('data:image/')) {
+        throw new Error("Invalid image format");
+      }
+
+      console.log("Sending image for analysis, length:", selectedImage.length);
       const res = await apiRequest("POST", "/api/analyze", {
         imageData: selectedImage,
       });
@@ -90,16 +134,19 @@ export default function HomePage() {
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
                   isDragActive ? "border-primary bg-primary/5" : "border-gray-200"
-                }`}
+                } ${imageError ? "border-red-500" : ""}`}
               >
                 <input {...getInputProps()} />
                 <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <p className="text-sm text-gray-600">
-                  Drag & drop a dermoscopic image, or click to select
+                  Drag & drop a dermoscopic image (JPEG/PNG, max 1MB), or click to select
                 </p>
+                {imageError && (
+                  <p className="text-sm text-red-500 mt-2">{imageError}</p>
+                )}
               </div>
 
-              {selectedImage && (
+              {selectedImage && !imageError && (
                 <div className="mt-4 space-y-4">
                   <img
                     src={selectedImage}
