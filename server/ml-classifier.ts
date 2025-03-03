@@ -3,8 +3,10 @@ import { createCanvas } from "canvas";
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Hardcoded endpoint path as provided
-const ENDPOINT = "projects/skin-lesion-443301/locations/us-central1/endpoints/903117960334278656";
+// Project configuration
+const PROJECT_ID = "skin-lesion-443301";
+const LOCATION = "us-central1";
+const ENDPOINT_ID = "903117960334278656";
 
 // Debug logging for credentials
 const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
@@ -30,61 +32,47 @@ try {
 
 // Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
-  apiEndpoint: 'us-central1-aiplatform.googleapis.com',
+  apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
   keyFilename: absolutePath
 });
 
 /**
- * Utility: Extracts raw Base64 data from a Data URL if present.
- * If the string starts with "data:image/...", it returns the part after the comma.
- * Otherwise, returns the string unchanged.
- */
-function extractBase64(imageData: string): string {
-  if (imageData.startsWith("data:image/")) {
-    const parts = imageData.split(",");
-    return parts.length > 1 ? parts[1] : imageData;
-  }
-  return imageData;
-}
-
-/**
  * Classify an uploaded image using Vertex AI AutoML
- * @param {string} imageData - Base64 encoded image data (with or without data URI prefix)
+ * @param {string} imageData - Base64 encoded image data
  * @returns {Promise<{ label: string, confidence: number }>}
  */
 export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
   try {
     console.log("\n=== Starting Image Classification ===");
-    console.log("Using endpoint:", ENDPOINT);
+    console.log("Project Configuration:");
+    console.log(`- Project ID: ${PROJECT_ID}`);
+    console.log(`- Location: ${LOCATION}`);
+    console.log(`- Endpoint ID: ${ENDPOINT_ID}`);
 
-    // Extract raw Base64 string
-    const rawBase64 = extractBase64(imageData);
-    console.log("Raw Base64 length:", rawBase64.length);
-    console.log("First 50 chars of raw Base64:", rawBase64.substring(0, 50));
+    // Remove any Base64 prefix if present
+    const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
+    console.log("Base64 Image length:", base64Image.length);
+    console.log("First 50 chars of base64:", base64Image.substring(0, 50));
 
-    // Build the request object using the format matching the Deploy & Test tool.
-    // Here, the image data is wrapped in an "image" object with "bytesBase64Encoded"
+    // Build the endpoint path using the helper function
+    const endpoint = predictionClient.endpointPath(PROJECT_ID, LOCATION, ENDPOINT_ID);
+    console.log("\nGenerated Endpoint Path:", endpoint);
+
+    // Format request according to Vertex AI specifications
     const request = {
-      name: ENDPOINT,
+      endpoint,
       instances: [
         {
-          image: {
-            bytesBase64Encoded: rawBase64
-          }
+          content: base64Image
         }
-      ],
-      parameters: {
-        confidenceThreshold: 0.5
-      }
+      ]
     };
 
-    // Log the request object (masking the Base64 content)
+    // Log the complete request object (masking the base64 content)
     console.log("\nRequest being sent to Vertex AI:");
     console.log(JSON.stringify({
       ...request,
-      instances: [
-        { image: { bytesBase64Encoded: `[Base64 string of length ${rawBase64.length}]` } }
-      ]
+      instances: [{ content: `[Base64 string of length ${base64Image.length}]` }]
     }, null, 2));
 
     // Call Vertex AI for prediction
