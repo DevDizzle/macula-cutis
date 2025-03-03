@@ -4,7 +4,7 @@ import { createCanvas } from "canvas";
 // Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
 const LOCATION = "us-central1";
-const ENDPOINT_ID = "903117960334278656";  // ✅ Correct Numeric ID
+const ENDPOINT_ID = "903117960334278656";
 
 // Initialize Google Cloud AI Prediction Client with explicit project
 const predictionClient = new PredictionServiceClient({
@@ -23,22 +23,29 @@ const endpointPath = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${E
 export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
   try {
     console.log("Starting image classification...");
-    console.log("Project ID:", PROJECT_ID);
-    console.log("Location:", LOCATION);
-    console.log("Endpoint Path:", endpointPath);
 
     // Remove any Base64 prefix if present
     const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
 
-    console.log("Making prediction request to Vertex AI...");
+    // Prepare the prediction request according to Vertex AI specifications
     const request = {
-      name: endpointPath,  // ✅ Using "name" instead of "endpoint"
-      instances: [{ b64: base64Image }]  // ✅ Using "b64" field for base64 data
+      endpoint: endpointPath,
+      instances: [{
+        content: base64Image,
+        mimeType: "image/jpeg"
+      }],
+      parameters: {
+        confidenceThreshold: 0.5,
+        maxPredictions: 1
+      }
     };
+
+    console.log("Making prediction request to Vertex AI...");
+    console.log("Endpoint:", endpointPath);
 
     // Call Vertex AI for prediction
     const [response] = await predictionClient.predict(request);
-    console.log("Received response:", JSON.stringify(response, null, 2));
+    console.log("Raw response:", JSON.stringify(response, null, 2));
 
     if (!response.predictions || response.predictions.length === 0) {
       throw new Error("No predictions returned from the model");
@@ -48,7 +55,7 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
 
     return {
       label: prediction.displayNames?.[0] || "unknown",
-      confidence: prediction.confidenceScores?.[0] || 0,
+      confidence: prediction.confidences?.[0] || 0
     };
   } catch (error: any) {
     console.error("Error in classifyImage:", error);
