@@ -9,11 +9,11 @@ const LOCATION = "us-central1";
 const ENDPOINT_ID = "903117960334278656";  // ✅ Correct Numeric ID
 
 // Load credentials from the JSON file
+const credentialsPath = join(process.cwd(), "attached_assets", "skin-lesion-443301-9fd70b8d7c77.json");
+console.log("Loading credentials from:", credentialsPath);
+
 const credentials = JSON.parse(
-  readFileSync(
-    join(process.cwd(), "attached_assets/skin-lesion-443301-9fd70b8d7c77.json"),
-    "utf-8"
-  )
+  readFileSync(credentialsPath, "utf-8")
 );
 
 // Initialize Google Cloud AI Prediction Client
