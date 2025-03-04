@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDropzone } from "react-dropzone";
 import { useState, useCallback } from "react";
-import { Loader2, Upload, AlertTriangle, CheckCircle2, ArrowUpCircle } from "lucide-react";
+import { Loader2, Upload, AlertTriangle, CheckCircle2, ArrowUpCircle, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -12,6 +12,34 @@ const ACCEPTED_TYPES = {
   'image/jpeg': ['.jpg', '.jpeg'],
   'image/png': ['.png']
 };
+
+// Sample images data with their Base64 content
+const SAMPLE_IMAGES = [
+  {
+    id: 'ISIC_0098024',
+    src: '/attached_assets/PROVe_AI_ISIC_0098024.jpg',
+    alt: 'Sample dermoscopic image 1',
+    description: 'Common Nevus'
+  },
+  {
+    id: 'ISIC_0429987',
+    src: '/attached_assets/PROVe_AI_ISIC_0429987.jpg',
+    alt: 'Sample dermoscopic image 2',
+    description: 'Melanocytic Lesion'
+  },
+  {
+    id: 'ISIC_0806140',
+    src: '/attached_assets/PROVe_AI_ISIC_0806140.jpg',
+    alt: 'Sample dermoscopic image 3',
+    description: 'Atypical Nevus'
+  },
+  {
+    id: 'ISIC_0820400',
+    src: '/attached_assets/PROVe_AI_ISIC_0820400.jpg',
+    alt: 'Sample dermoscopic image 4',
+    description: 'Melanoma Suspect'
+  }
+];
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -38,6 +66,16 @@ export default function HomePage() {
       reader.readAsDataURL(file);
     });
   }, []);
+
+  const processSampleImage = useCallback(async (imagePath: string) => {
+    try {
+      const response = await fetch(imagePath);
+      const blob = await response.blob();
+      return await processImage(new File([blob], 'sample.jpg', { type: 'image/jpeg' }));
+    } catch (error) {
+      throw new Error("Failed to load sample image");
+    }
+  }, [processImage]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -88,6 +126,21 @@ export default function HomePage() {
     },
   });
 
+  const handleSampleImageClick = async (imagePath: string) => {
+    try {
+      setImageError(null);
+      const processedImage = await processSampleImage(imagePath);
+      setSelectedImage(processedImage);
+    } catch (error) {
+      setImageError(error instanceof Error ? error.message : "Unknown error");
+      toast({
+        title: "Sample Image Error",
+        description: "Failed to load sample image",
+        variant: "destructive",
+      });
+    }
+  };
+
   const resetAnalysis = () => {
     setSelectedImage(null);
     setImageError(null);
@@ -126,63 +179,100 @@ export default function HomePage() {
         </div>
 
         {!analyzeMutation.data ? (
-          <Card className="bg-white shadow-xl border-0 mb-8">
-            <CardContent className="p-8">
-              <div
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 ${
-                  isDragActive
-                    ? "border-cyan-500 bg-cyan-50"
-                    : "border-gray-200 hover:border-cyan-400 hover:bg-gray-50"
-                } ${imageError ? "border-red-500" : ""}`}
-              >
-                <input {...getInputProps()} />
-                <Upload className="mx-auto h-16 w-16 text-cyan-600 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  Upload dermoscopic image for immediate assessment
-                </h3>
-                <p className="text-gray-600">
-                  Drag & drop your dermoscopic image (PNG, JPG) or click to select
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Maximum file size: 1MB
-                </p>
-                {imageError && (
-                  <p className="text-sm text-red-500 mt-4">{imageError}</p>
-                )}
-              </div>
-
-              {selectedImage && !imageError && (
-                <div className="mt-8 space-y-4">
-                  <div className="max-w-md mx-auto">
-                    <img
-                      src={selectedImage}
-                      alt="Selected dermoscopic image"
-                      className="rounded-lg shadow-lg"
-                    />
-                  </div>
-                  <button
-                    className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-colors ${
-                      analyzeMutation.isPending
-                        ? "bg-cyan-400 cursor-not-allowed"
-                        : "bg-cyan-600 hover:bg-cyan-700"
-                    }`}
-                    onClick={() => analyzeMutation.mutate()}
-                    disabled={analyzeMutation.isPending}
-                  >
-                    {analyzeMutation.isPending ? (
-                      <div className="flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        Analyzing Image...
-                      </div>
-                    ) : (
-                      "Analyze Image"
-                    )}
-                  </button>
+          <>
+            <Card className="bg-white shadow-xl border-0 mb-8">
+              <CardContent className="p-8">
+                <div
+                  {...getRootProps()}
+                  className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 ${
+                    isDragActive
+                      ? "border-cyan-500 bg-cyan-50"
+                      : "border-gray-200 hover:border-cyan-400 hover:bg-gray-50"
+                  } ${imageError ? "border-red-500" : ""}`}
+                >
+                  <input {...getInputProps()} />
+                  <Upload className="mx-auto h-16 w-16 text-cyan-600 mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    Upload dermoscopic image for immediate assessment
+                  </h3>
+                  <p className="text-gray-600">
+                    Drag & drop your dermoscopic image (PNG, JPG) or click to select
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Maximum file size: 1MB
+                  </p>
+                  {imageError && (
+                    <p className="text-sm text-red-500 mt-4">{imageError}</p>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                {selectedImage && !imageError && (
+                  <div className="mt-8 space-y-4">
+                    <div className="max-w-md mx-auto">
+                      <img
+                        src={selectedImage}
+                        alt="Selected dermoscopic image"
+                        className="rounded-lg shadow-lg"
+                      />
+                    </div>
+                    <button
+                      className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-colors ${
+                        analyzeMutation.isPending
+                          ? "bg-cyan-400 cursor-not-allowed"
+                          : "bg-cyan-600 hover:bg-cyan-700"
+                      }`}
+                      onClick={() => analyzeMutation.mutate()}
+                      disabled={analyzeMutation.isPending}
+                    >
+                      {analyzeMutation.isPending ? (
+                        <div className="flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                          Analyzing Image...
+                        </div>
+                      ) : (
+                        "Analyze Image"
+                      )}
+                    </button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Sample Images Section */}
+            <Card className="bg-white shadow-xl border-0">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Info className="h-5 w-5 text-cyan-600" />
+                  <CardTitle>Try with Sample Images</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-6">
+                  Click on any sample image below to analyze it with our AI system. These images are from the ISIC Archive and represent various types of skin lesions.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {SAMPLE_IMAGES.map((image) => (
+                    <div
+                      key={image.id}
+                      className="cursor-pointer group"
+                      onClick={() => handleSampleImageClick(image.src)}
+                    >
+                      <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 group-hover:border-cyan-400 transition-colors">
+                        <img
+                          src={image.src}
+                          alt={image.alt}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                      <p className="text-sm text-gray-600 mt-2 text-center">
+                        {image.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
         ) : (
           <Card className="bg-white shadow-xl border-0">
             <CardContent className="p-8">
@@ -203,7 +293,7 @@ export default function HomePage() {
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Original Image</h3>
                     <img
-                      src={selectedImage}
+                      src={selectedImage ?? undefined}
                       alt="Original dermoscopic image"
                       className="rounded-lg shadow-lg"
                     />
