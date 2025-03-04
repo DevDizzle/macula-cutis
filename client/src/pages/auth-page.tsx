@@ -106,6 +106,10 @@ function LoginForm() {
   const { loginMutation } = useAuth();
   const form = useForm({
     resolver: zodResolver(insertUserSchema.pick({ username: true, password: true })),
+    defaultValues: {
+      username: "",
+      password: ""
+    }
   });
 
   return (
@@ -156,6 +160,12 @@ function RegisterForm() {
   const { registerMutation } = useAuth();
   const form = useForm({
     resolver: zodResolver(insertUserSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      name: "",
+      title: ""
+    }
   });
 
   return (

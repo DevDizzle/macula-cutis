@@ -1,18 +1,11 @@
-import { PredictionServiceClient } from "@google-cloud/aiplatform";
+import { GoogleAuth } from 'google-auth-library';
+import axios from 'axios';
 import { createCanvas } from "canvas";
 
 // Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
 const LOCATION = "us-central1";
 const ENDPOINT_ID = "903117960334278656";
-
-// Initialize Google Cloud AI Prediction Client
-const predictionClient = new PredictionServiceClient({
-  projectId: PROJECT_ID,
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-  apiEndpoint: "us-central1-aiplatform.googleapis.com", // Critical for regional endpoints
-  scopes: ['https://www.googleapis.com/auth/cloud-platform']
-});
 
 /**
  * Classify an uploaded image using Vertex AI AutoML
@@ -28,46 +21,53 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
       ? imageData.split(",")[1]
       : imageData;
 
-    // Validate Base64 string
+    // Validate base64 string
     if (!base64Image || base64Image.trim().length === 0) {
       throw new Error('Invalid base64 image data');
     }
     console.log("Base64 image length:", base64Image.length);
 
-    // Construct the endpoint path exactly as in test-endpoint.sh
+    // Initialize auth client with the service account credentials
+    const auth = new GoogleAuth({
+      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      scopes: ['https://www.googleapis.com/auth/cloud-platform']
+    });
+
+    // Get access token
+    const accessToken = await auth.getAccessToken();
+    console.log("Got access token");
+
+    // Construct endpoint URL exactly as in test-endpoint.sh
     const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
-    console.log("Using endpoint:", endpoint);
-    console.log("API Endpoint:", "us-central1-aiplatform.googleapis.com");
+    const apiUrl = `https://${LOCATION}-aiplatform.googleapis.com/v1/${endpoint}:predict`;
 
-    // Format request to exactly match the working curl example
-    const request = {
-      name: endpoint,
-      instances: [
-        {
-          content: base64Image
+    console.log("Using API URL:", apiUrl);
+
+    // Make request using the exact format from test-endpoint.sh
+    const response = await axios.post(
+      apiUrl,
+      {
+        instances: [{ content: base64Image }],
+        parameters: {
+          confidenceThreshold: 0.5,
+          maxPredictions: 5
         }
-      ],
-      parameters: {
-        confidenceThreshold: 0.5,
-        maxPredictions: 5
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
       }
-    };
+    );
 
-    console.log("Making prediction request to Vertex AI...");
-    console.log("Request structure:", JSON.stringify({
-      ...request,
-      instances: [{ content: "[BASE64_CONTENT_TRUNCATED]" }]
-    }, null, 2));
+    console.log("Raw response:", JSON.stringify(response.data, null, 2));
 
-    // Call Vertex AI for prediction
-    const [response] = await predictionClient.predict(request);
-    console.log("Raw response:", JSON.stringify(response, null, 2));
-
-    if (!response.predictions || response.predictions.length === 0) {
+    if (!response.data.predictions || response.data.predictions.length === 0) {
       throw new Error("No predictions returned from the model");
     }
 
-    const prediction = response.predictions[0];
+    const prediction = response.data.predictions[0];
     if (!prediction.displayNames?.[0] || !prediction.confidences?.[0]) {
       throw new Error("Invalid prediction format returned from the model");
     }
@@ -80,13 +80,9 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     console.error("Error in classifyImage:", error);
     console.error("Error details:", {
       message: error instanceof Error ? error.message : String(error),
-      name: error instanceof Error ? error.name : "UnknownError",
-      code: error.code,
-      details: error.details,
-      metadata: error.metadata,
-      reason: error.reason,
-      domain: error.domain,
-      errorInfoMetadata: error.errorInfoMetadata
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers
     });
     throw new Error(`Failed to classify image: ${error instanceof Error ? error.message : String(error)}`);
   }
