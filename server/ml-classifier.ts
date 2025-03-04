@@ -10,6 +10,7 @@ const ENDPOINT_ID = "903117960334278656";
 const predictionClient = new PredictionServiceClient({
   projectId: PROJECT_ID,
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  apiEndpoint: "us-central1-aiplatform.googleapis.com",
   scopes: ['https://www.googleapis.com/auth/cloud-platform']
 });
 
@@ -27,9 +28,16 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
       ? imageData.split(",")[1]
       : imageData;
 
+    // Validate base64 string
+    if (!base64Image || base64Image.trim().length === 0) {
+      throw new Error("Invalid base64 image data");
+    }
+    console.log("Base64 image length:", base64Image.length);
+
     // Construct the endpoint path
     const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
     console.log("Using endpoint:", endpoint);
+    console.log("API Endpoint:", "us-central1-aiplatform.googleapis.com");
 
     // Format request to match the working curl example
     const request = {
