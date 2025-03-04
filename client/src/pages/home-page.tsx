@@ -165,7 +165,7 @@ export default function HomePage() {
   const resetAnalysis = () => {
     setSelectedImage(null);
     setImageError(null);
-    analyzeMutation.reset(); // Add this line to reset the mutation data
+    analyzeMutation.reset(); 
   };
 
   const getRecommendation = (prediction: string, confidence: number) => {
@@ -200,8 +200,8 @@ export default function HomePage() {
           </p>
         </div>
 
-        {!analyzeMutation.data ? (
-          <>
+        <div className="space-y-8">
+          {!selectedImage ? (
             <Card className="bg-white shadow-xl border-0 mb-8">
               <CardContent className="p-8">
                 <div
@@ -227,40 +227,49 @@ export default function HomePage() {
                     <p className="text-sm text-red-500 mt-4">{imageError}</p>
                   )}
                 </div>
-
-                {selectedImage && !imageError && (
-                  <div className="mt-8 space-y-4">
-                    <div className="max-w-md mx-auto">
-                      <img
-                        src={selectedImage}
-                        alt="Selected dermoscopic image"
-                        className="rounded-lg shadow-lg"
-                      />
-                    </div>
-                    <button
-                      className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-colors ${
-                        analyzeMutation.isPending
-                          ? "bg-cyan-400 cursor-not-allowed"
-                          : "bg-cyan-600 hover:bg-cyan-700"
-                      }`}
-                      onClick={() => analyzeMutation.mutate()}
-                      disabled={analyzeMutation.isPending}
-                    >
-                      {analyzeMutation.isPending ? (
-                        <div className="flex items-center justify-center">
-                          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                          Analyzing Image...
-                        </div>
-                      ) : (
-                        "Analyze Image"
-                      )}
-                    </button>
-                  </div>
-                )}
               </CardContent>
             </Card>
+          ) : (
+            <Card className="bg-white shadow-xl border-0">
+              <CardContent className="p-8">
+                <div className="mt-8 space-y-4">
+                  <div className="max-w-md mx-auto">
+                    <img
+                      src={selectedImage}
+                      alt="Selected dermoscopic image"
+                      className="rounded-lg shadow-lg"
+                    />
+                  </div>
+                  <button
+                    className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-colors ${
+                      analyzeMutation.isPending
+                        ? "bg-cyan-400 cursor-not-allowed"
+                        : "bg-cyan-600 hover:bg-cyan-700"
+                    }`}
+                    onClick={() => analyzeMutation.mutate()}
+                    disabled={analyzeMutation.isPending}
+                  >
+                    {analyzeMutation.isPending ? (
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Analyzing Image...
+                      </div>
+                    ) : (
+                      "Analyze Image"
+                    )}
+                  </button>
+                  <button
+                    onClick={resetAnalysis}
+                    className="w-full py-2 px-4 text-cyan-600 hover:text-cyan-700 font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Sample Images Section */}
+          {!selectedImage && (
             <Card className="bg-white shadow-xl border-0">
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -296,8 +305,11 @@ export default function HomePage() {
                 </Carousel>
               </CardContent>
             </Card>
-          </>
-        ) : (
+          )}
+        </div>
+
+
+        {analyzeMutation.data && (
           <Card className="bg-white shadow-xl border-0">
             <CardContent className="p-8">
               <div className="text-center mb-8">
