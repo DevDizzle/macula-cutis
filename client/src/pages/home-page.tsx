@@ -165,6 +165,7 @@ export default function HomePage() {
   const resetAnalysis = () => {
     setSelectedImage(null);
     setImageError(null);
+    analyzeMutation.reset(); // Add this line to reset the mutation data
   };
 
   const getRecommendation = (prediction: string, confidence: number) => {
@@ -269,23 +270,21 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-6">
-                  Drag & drop or click any sample image to analyze it with our AI system. These images are from <a href="https://doi.org/10.34970/576276" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">PROVe-AI's clinical validation study</a>.
+                  Click any sample image to analyze it with our AI system. These images are from <a href="https://doi.org/10.34970/576276" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">PROVe-AI's clinical validation study</a>.
                 </p>
                 <Carousel className="w-full max-w-xl mx-auto">
                   <CarouselContent>
                     {SAMPLE_IMAGES.map((image) => (
                       <CarouselItem key={image.id} className="basis-1/2">
-                        <div className="px-2">
+                        <div
+                          className="cursor-pointer group px-2"
+                          onClick={() => handleSampleImageClick(image.src)}
+                        >
                           <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 group-hover:border-cyan-400 transition-colors">
                             <img
                               src={image.src}
                               alt={image.alt}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              draggable="true"
-                              onDragStart={(e) => {
-                                e.dataTransfer.setData('application/x-sample-image', image.src);
-                              }}
-                              onClick={() => handleSampleImageClick(image.src)}
                             />
                           </div>
                         </div>
