@@ -1,257 +1,222 @@
-
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDropzone } from "react-dropzone";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { LoaderCircle } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useCallback, useState } from "react";
+import { Loader2, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Analysis } from "@shared/schema";
 
-function HomePage() {
-  const [currentImage, setCurrentImage] = useState<string | null>(null);
+const MAX_IMAGE_SIZE = 1024 * 1024; // 1MB
+const ACCEPTED_TYPES = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png']
+};
+
+export default function HomePage() {
+  const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
-  // Query past analyses
-  const analyses = useQuery({
-    queryKey: ["analyses"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/analyses");
-      return await res.json();
-    },
+  const processImage = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (file.size > MAX_IMAGE_SIZE) {
+        reject(new Error("Image size must be less than 1MB"));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Ensure we have a proper base64 string
+        if (typeof result === 'string' && result.startsWith('data:image/')) {
+          resolve(result);
+        } else {
+          reject(new Error("Invalid image format"));
+        }
+      };
+      reader.onerror = () => reject(new Error("Failed to read image file"));
+      reader.readAsDataURL(file);
+    });
+  }, []);
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      try {
+        setImageError(null);
+        const processedImage = await processImage(file);
+        setSelectedImage(processedImage);
+      } catch (error) {
+        setImageError(error.message);
+        toast({
+          title: "Image Processing Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    }
+  }, [toast]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: ACCEPTED_TYPES,
+    maxFiles: 1,
+    maxSize: MAX_IMAGE_SIZE,
   });
 
-  // Create a new analysis
   const analyzeMutation = useMutation({
-    mutationFn: async (imageData: string) => {
-      const res = await apiRequest("POST", "/api/analyze", { imageData });
-      return await res.json();
+    mutationFn: async () => {
+      if (!selectedImage) throw new Error("No image selected");
+
+      // Verify the base64 format before sending
+      if (!selectedImage.startsWith('data:image/')) {
+        throw new Error("Invalid image format");
+      }
+
+      console.log("Sending image for analysis, length:", selectedImage.length);
+      const res = await apiRequest("POST", "/api/analyze", {
+        imageData: selectedImage,
+      });
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["analyses"],
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
       toast({
-        title: "Analysis complete",
-        description: "Your image has been analyzed successfully",
+        title: "Analysis Complete",
+        description: "Your image has been analyzed successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: "Analysis failed",
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: "Analysis Failed",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  const onDrop = async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
-
-    const file = acceptedFiles[0];
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setCurrentImage(base64);
-      analyzeMutation.mutate(base64);
-    };
-
-    reader.readAsDataURL(file);
-  };
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "image/*": [".jpeg", ".jpg", ".png"],
-    },
+  const { data: analyses, isLoading: isLoadingAnalyses } = useQuery<Analysis[]>({
+    queryKey: ["/api/analyses"],
   });
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Skin Lesion Analyzer</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upload Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Image</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-muted transition-colors ${
-                isDragActive ? "border-primary bg-primary/10" : "border-muted"
-              }`}
-            >
-              <input {...getInputProps()} />
-              {currentImage ? (
-                <div className="flex flex-col items-center">
-                  <img
-                    src={currentImage}
-                    alt="Uploaded"
-                    className="max-h-48 rounded mb-4"
-                  />
-                  <p>Drop a new image or click to replace</p>
-                </div>
-              ) : isDragActive ? (
-                <p>Drop the image here...</p>
-              ) : (
-                <p>
-                  Drag and drop a skin lesion image here, or click to select a
-                  file
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold">2nd Opinion</h1>
+            <p className="text-sm text-gray-600">
+              Welcome, {user?.name} ({user?.title})
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+          >
+            Logout
+          </Button>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-2 gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Image</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                  isDragActive ? "border-primary bg-primary/5" : "border-gray-200"
+                } ${imageError ? "border-red-500" : ""}`}
+              >
+                <input {...getInputProps()} />
+                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <p className="text-sm text-gray-600">
+                  Drag & drop a dermoscopic image (JPEG/PNG, max 1MB), or click to select
                 </p>
-              )}
-            </div>
-
-            {analyzeMutation.isPending && (
-              <div className="flex items-center justify-center mt-4">
-                <LoaderCircle className="animate-spin mr-2" />
-                <span>Analyzing image...</span>
+                {imageError && (
+                  <p className="text-sm text-red-500 mt-2">{imageError}</p>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Results Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Analysis History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="list">
-              <TabsList className="mb-4">
-                <TabsTrigger value="list">List View</TabsTrigger>
-                <TabsTrigger value="detailed">Detailed View</TabsTrigger>
-              </TabsList>
+              {selectedImage && !imageError && (
+                <div className="mt-4 space-y-4">
+                  <img
+                    src={selectedImage}
+                    alt="Selected"
+                    className="rounded-lg max-h-64 mx-auto"
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={() => analyzeMutation.mutate()}
+                    disabled={analyzeMutation.isPending}
+                  >
+                    {analyzeMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Analyze Image
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-              <TabsContent value="list">
-                <ScrollArea className="h-[400px]">
-                  {analyses.isLoading ? (
-                    <div className="flex justify-center p-4">
-                      <LoaderCircle className="animate-spin" />
-                    </div>
-                  ) : analyses.data?.length > 0 ? (
-                    <div className="space-y-2">
-                      {analyses.data.map((analysis: any) => (
-                        <div
-                          key={analysis.id}
-                          className="flex items-center justify-between p-2 rounded border hover:bg-muted cursor-pointer"
-                          onClick={() => setCurrentImage(analysis.imageData)}
-                        >
-                          <div className="flex items-center">
-                            <img
-                              src={analysis.imageData}
-                              alt="Skin lesion"
-                              className="w-12 h-12 object-cover rounded mr-2"
-                            />
-                            <div>
-                              <p className="font-medium">{analysis.prediction}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(
-                                  analysis.createdAt
-                                ).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge
-                            variant={
-                              analysis.confidence > 75
-                                ? "destructive"
-                                : analysis.confidence > 50
-                                ? "default"
-                                : "outline"
-                            }
-                          >
-                            {analysis.confidence}%
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-center text-muted-foreground">
-                      No analyses yet. Upload an image to get started.
-                    </p>
-                  )}
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="detailed">
-                {analyses.data &&
-                  analyses.data.length > 0 &&
-                  currentImage &&
-                  analyses.data
-                    .filter(
-                      (analysis: any) => analysis.imageData === currentImage
-                    )
-                    .map((analysis: any) => (
-                      <div key={analysis.id} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="font-medium mb-1">Original Image</p>
-                            <img
-                              src={analysis.imageData}
-                              alt="Original"
-                              className="w-full rounded"
-                            />
-                          </div>
-                          <div>
-                            <p className="font-medium mb-1">Heatmap Overlay</p>
-                            <img
-                              src={analysis.heatmapData}
-                              alt="Heatmap"
-                              className="w-full rounded"
-                            />
-                          </div>
-                        </div>
-
+          <Card>
+            <CardHeader>
+              <CardTitle>Analysis History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAnalyses ? (
+                <div className="text-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                </div>
+              ) : analyses?.length === 0 ? (
+                <p className="text-center py-8 text-gray-500">
+                  No analyses yet. Upload an image to get started.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {analyses?.map((analysis) => (
+                    <div
+                      key={analysis.id}
+                      className="border rounded-lg p-4 space-y-2"
+                    >
+                      <div className="flex gap-4">
+                        <img
+                          src={analysis.imageData}
+                          alt="Analysis"
+                          className="w-24 h-24 object-cover rounded"
+                        />
                         <div>
-                          <p className="font-medium">Diagnosis</p>
-                          <p>{analysis.prediction}</p>
-                        </div>
-
-                        <div>
-                          <p className="font-medium">Confidence</p>
-                          <div className="w-full bg-muted rounded-full h-2.5">
-                            <div
-                              className="bg-primary h-2.5 rounded-full"
-                              style={{ width: `${analysis.confidence}%` }}
-                            ></div>
-                          </div>
-                          <p className="text-right text-sm">
-                            {analysis.confidence}%
+                          <p className="font-medium">{analysis.prediction}</p>
+                          <p className="text-sm text-gray-600">
+                            Confidence: {analysis.confidence}%
                           </p>
-                        </div>
-
-                        <Separator />
-
-                        <div>
-                          <p className="font-medium">Date</p>
-                          <p>
-                            {new Date(
-                              analysis.createdAt
-                            ).toLocaleString()}
+                          <p className="text-xs text-gray-400">
+                            {new Date(analysis.createdAt).toLocaleString()}
                           </p>
                         </div>
                       </div>
-                    ))}
-
-                {(!currentImage || analyses.data?.length === 0) && (
-                  <p className="text-center text-muted-foreground">
-                    Select an analysis from the list view to see details.
-                  </p>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
+                      <img
+                        src={analysis.heatmapData}
+                        alt="Heatmap"
+                        className="w-full rounded"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }
-
-export default HomePage;
