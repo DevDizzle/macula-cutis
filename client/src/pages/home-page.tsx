@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDropzone } from "react-dropzone";
 import { useState, useCallback } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, AlertTriangle, CheckCircle2, ArrowUpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -87,6 +87,21 @@ export default function HomePage() {
     },
   });
 
+  const resetAnalysis = () => {
+    setSelectedImage(null);
+    setImageError(null);
+  };
+
+  const getRecommendation = (prediction: string, confidence: number) => {
+    const confidencePercentage = Math.round(confidence * 100);
+    if (prediction.toLowerCase() === "benign" && confidencePercentage >= 70) {
+      return "Low-risk lesion; monitor regularly as per your professional discretion.";
+    } else if (prediction.toLowerCase() === "malignant" && confidencePercentage >= 70) {
+      return "Immediate biopsy strongly recommended.";
+    }
+    return "Further clinical evaluation recommended due to moderate confidence level.";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-50 to-white">
       <main className="container mx-auto px-4 py-12 max-w-5xl">
@@ -99,79 +114,94 @@ export default function HomePage() {
           </p>
         </div>
 
-        <Card className="bg-white shadow-xl border-0 mb-8">
-          <CardContent className="p-8">
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 ${
-                isDragActive
-                  ? "border-cyan-500 bg-cyan-50"
-                  : "border-gray-200 hover:border-cyan-400 hover:bg-gray-50"
-              } ${imageError ? "border-red-500" : ""}`}
-            >
-              <input {...getInputProps()} />
-              <Upload className="mx-auto h-16 w-16 text-cyan-600 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                Upload dermoscopic image for immediate assessment
-              </h3>
-              <p className="text-gray-600">
-                Drag & drop your dermoscopic image (PNG, JPG) or click to select
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Maximum file size: 1MB
-              </p>
-              {imageError && (
-                <p className="text-sm text-red-500 mt-4">{imageError}</p>
-              )}
-            </div>
+        {!analyzeMutation.data ? (
+          <Card className="bg-white shadow-xl border-0 mb-8">
+            <CardContent className="p-8">
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 ${
+                  isDragActive
+                    ? "border-cyan-500 bg-cyan-50"
+                    : "border-gray-200 hover:border-cyan-400 hover:bg-gray-50"
+                } ${imageError ? "border-red-500" : ""}`}
+              >
+                <input {...getInputProps()} />
+                <Upload className="mx-auto h-16 w-16 text-cyan-600 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Upload dermoscopic image for immediate assessment
+                </h3>
+                <p className="text-gray-600">
+                  Drag & drop your dermoscopic image (PNG, JPG) or click to select
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Maximum file size: 1MB
+                </p>
+                {imageError && (
+                  <p className="text-sm text-red-500 mt-4">{imageError}</p>
+                )}
+              </div>
 
-            {selectedImage && !imageError && (
-              <div className="mt-8 space-y-4">
-                <div className="max-w-md mx-auto">
-                  <img
-                    src={selectedImage}
-                    alt="Selected dermoscopic image"
-                    className="rounded-lg shadow-lg"
-                  />
+              {selectedImage && !imageError && (
+                <div className="mt-8 space-y-4">
+                  <div className="max-w-md mx-auto">
+                    <img
+                      src={selectedImage}
+                      alt="Selected dermoscopic image"
+                      className="rounded-lg shadow-lg"
+                    />
+                  </div>
+                  <button
+                    className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-colors ${
+                      analyzeMutation.isPending
+                        ? "bg-cyan-400 cursor-not-allowed"
+                        : "bg-cyan-600 hover:bg-cyan-700"
+                    }`}
+                    onClick={() => analyzeMutation.mutate()}
+                    disabled={analyzeMutation.isPending}
+                  >
+                    {analyzeMutation.isPending ? (
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Analyzing Image...
+                      </div>
+                    ) : (
+                      "Analyze Image"
+                    )}
+                  </button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="bg-white shadow-xl border-0">
+            <CardContent className="p-8">
+              <div className="text-center mb-8">
+                {analyzeMutation.data.prediction.toLowerCase() === "benign" ? (
+                  <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                ) : (
+                  <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                )}
+                <h2 className="text-3xl font-bold mb-2">
+                  {analyzeMutation.data.prediction}
+                </h2>
+                <p className="text-xl text-gray-600 mb-6">
+                  Probability: {Math.round(analyzeMutation.data.confidence * 100)}%
+                </p>
+                <div className="max-w-2xl mx-auto bg-gray-50 rounded-lg p-6 mb-8">
+                  <p className="text-gray-700">
+                    {getRecommendation(
+                      analyzeMutation.data.prediction,
+                      analyzeMutation.data.confidence
+                    )}
+                  </p>
                 </div>
                 <button
-                  className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-colors ${
-                    analyzeMutation.isPending
-                      ? "bg-cyan-400 cursor-not-allowed"
-                      : "bg-cyan-600 hover:bg-cyan-700"
-                  }`}
-                  onClick={() => analyzeMutation.mutate()}
-                  disabled={analyzeMutation.isPending}
+                  onClick={resetAnalysis}
+                  className="flex items-center justify-center mx-auto px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
                 >
-                  {analyzeMutation.isPending ? (
-                    <div className="flex items-center justify-center">
-                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      Analyzing Image...
-                    </div>
-                  ) : (
-                    "Analyze Image"
-                  )}
+                  <ArrowUpCircle className="w-5 h-5 mr-2" />
+                  Analyze Another Image
                 </button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {analyzeMutation.data && (
-          <Card className="bg-white shadow-md">
-            <CardHeader>
-              <CardTitle>Analysis Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="text-lg font-medium">
-                    {analyzeMutation.data.prediction}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Confidence: {Math.round(analyzeMutation.data.confidence * 100)}%
-                  </p>
-                </div>
               </div>
             </CardContent>
           </Card>
