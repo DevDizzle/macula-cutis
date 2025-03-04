@@ -80,9 +80,10 @@ export default function HomePage() {
     }
   }, [processImage]);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
+  const onDrop = useCallback(async (acceptedFiles: File[], fileRejections, event) => {
+    if (acceptedFiles.length > 0) {
+      // Handle file drop from user's computer
+      const file = acceptedFiles[0];
       try {
         setImageError(null);
         const processedImage = await processImage(file);
@@ -95,8 +96,25 @@ export default function HomePage() {
           variant: "destructive",
         });
       }
+    } else {
+      // Handle sample image drop
+      const sampleSrc = event.dataTransfer.getData('application/x-sample-image');
+      if (sampleSrc) {
+        try {
+          setImageError(null);
+          const processedImage = await processSampleImage(sampleSrc);
+          setSelectedImage(processedImage);
+        } catch (error) {
+          setImageError(error instanceof Error ? error.message : "Unknown error");
+          toast({
+            title: "Sample Image Processing Error",
+            description: "Failed to process sample image",
+            variant: "destructive",
+          });
+        }
+      }
     }
-  }, [toast, processImage]);
+  }, [toast, processImage, processSampleImage]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -251,21 +269,23 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-6">
-                  Click any sample image to analyze it with our AI system. These images are from <a href="https://doi.org/10.34970/576276" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">PROVe-AI's clinical validation study</a>.
+                  Drag & drop or click any sample image to analyze it with our AI system. These images are from <a href="https://doi.org/10.34970/576276" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">PROVe-AI's clinical validation study</a>.
                 </p>
                 <Carousel className="w-full max-w-xl mx-auto">
                   <CarouselContent>
                     {SAMPLE_IMAGES.map((image) => (
                       <CarouselItem key={image.id} className="basis-1/2">
-                        <div
-                          className="cursor-pointer group px-2"
-                          onClick={() => handleSampleImageClick(image.src)}
-                        >
+                        <div className="px-2">
                           <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 group-hover:border-cyan-400 transition-colors">
                             <img
                               src={image.src}
                               alt={image.alt}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              draggable="true"
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('application/x-sample-image', image.src);
+                              }}
+                              onClick={() => handleSampleImageClick(image.src)}
                             />
                           </div>
                         </div>
