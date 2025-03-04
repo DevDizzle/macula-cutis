@@ -40,9 +40,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(analysis);
     } catch (error) {
       console.error("Error in /api/analyze:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       res.status(500).json({ 
         message: "Analysis failed",
-        error: error.message 
+        error: errorMessage 
       });
     }
   });

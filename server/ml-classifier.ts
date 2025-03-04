@@ -1,7 +1,5 @@
 import { PredictionServiceClient } from "@google-cloud/aiplatform";
 import { createCanvas } from "canvas";
-import * as fs from 'fs';
-import * as path from 'path';
 
 // Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
@@ -11,8 +9,8 @@ const ENDPOINT_ID = "903117960334278656";
 // Initialize Google Cloud AI Prediction Client
 const predictionClient = new PredictionServiceClient({
   projectId: PROJECT_ID,
-  apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
   scopes: ['https://www.googleapis.com/auth/cloud-platform']
 });
 
@@ -31,25 +29,24 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     // Construct the endpoint path
     const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
 
-    // Format request according to the working test configuration
+    // Format request according to the REST API format
     const request = {
-      endpoint,
+      name: endpoint,
       instances: [
         {
-          content: base64Image,
-          mimeType: "image/jpeg"
+          content: base64Image
         }
       ],
       parameters: {
         confidenceThreshold: 0.5,
-        maxPredictions: 1
+        maxPredictions: 5
       }
     };
 
     console.log("Making prediction request to Vertex AI...");
     console.log("Request structure:", JSON.stringify({
       ...request,
-      instances: [{ content: "[BASE64_CONTENT_TRUNCATED]", mimeType: "image/jpeg" }]
+      instances: [{ content: "[BASE64_CONTENT_TRUNCATED]" }]
     }, null, 2));
 
     // Call Vertex AI for prediction
