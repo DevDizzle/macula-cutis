@@ -24,22 +24,22 @@ const ACCEPTED_TYPES = {
 const SAMPLE_IMAGES = [
   {
     id: 'ISIC_0098024',
-    src: '../attached_assets/PROVe_AI_ISIC_0098024.jpg',
+    src: '/PROVe_AI_ISIC_0098024.jpg',
     alt: 'Sample dermoscopic image 1'
   },
   {
     id: 'ISIC_0429987',
-    src: '../attached_assets/PROVe_AI_ISIC_0429987.jpg',
+    src: '/PROVe_AI_ISIC_0429987.jpg',
     alt: 'Sample dermoscopic image 2'
   },
   {
     id: 'ISIC_0806140',
-    src: '../attached_assets/PROVe_AI_ISIC_0806140.jpg',
+    src: '/PROVe_AI_ISIC_0806140.jpg',
     alt: 'Sample dermoscopic image 3'
   },
   {
     id: 'ISIC_0820400',
-    src: '../attached_assets/PROVe_AI_ISIC_0820400.jpg',
+    src: '/PROVe_AI_ISIC_0820400.jpg',
     alt: 'Sample dermoscopic image 4'
   }
 ];
