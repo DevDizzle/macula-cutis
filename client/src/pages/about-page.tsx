@@ -87,13 +87,16 @@ export default function AboutPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Interpretability (Coming Soon)</CardTitle>
+              <CardTitle>Interpretability</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600">
-                To further enhance transparency and clinical trust, we plan to incorporate SHAP heatmaps. 
-                These visual explanations will clearly highlight image regions that most significantly 
-                influence the model's predictions.
+                To enhance transparency and clinical trust, MaculaCutis now incorporates advanced 
+                explainability techniques, providing heatmaps that clearly highlight the image regions 
+                most influential in the model's predictions. These visual explanations are seamlessly 
+                integrated into the app, allowing you to see exactly which areas of the image drive 
+                the AI's decision-making. This feature increases confidence in the results, ensuring 
+                you can validate the model's focus on clinically relevant features.
               </p>
             </CardContent>
           </Card>
