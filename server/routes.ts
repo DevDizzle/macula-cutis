@@ -9,8 +9,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   app.post("/api/analyze", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
     try {
       console.log("Starting analysis request...");
       const parsed = insertAnalysisSchema.safeParse(req.body);
@@ -49,9 +47,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/analyses", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
-    const analyses = await storage.getAnalysesByUserId(req.user!.id);
+    // Get first user or use a default user ID
+    const firstUser = await storage.getUser(1) || { id: 1 };
+    const analyses = await storage.getAnalysesByUserId(firstUser.id);
     res.json(analyses);
   });
 
