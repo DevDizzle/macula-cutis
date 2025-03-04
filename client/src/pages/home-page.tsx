@@ -6,6 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const MAX_IMAGE_SIZE = 1024 * 1024; // 1MB
 const ACCEPTED_TYPES = {
@@ -13,31 +20,27 @@ const ACCEPTED_TYPES = {
   'image/png': ['.png']
 };
 
-// Sample images data with their Base64 content
+// Sample images from PROVe-AI (DOI: https://doi.org/10.34970/576276)
 const SAMPLE_IMAGES = [
   {
     id: 'ISIC_0098024',
     src: '/attached_assets/PROVe_AI_ISIC_0098024.jpg',
-    alt: 'Sample dermoscopic image 1',
-    description: 'Common Nevus'
+    alt: 'Sample dermoscopic image 1'
   },
   {
     id: 'ISIC_0429987',
     src: '/attached_assets/PROVe_AI_ISIC_0429987.jpg',
-    alt: 'Sample dermoscopic image 2',
-    description: 'Melanocytic Lesion'
+    alt: 'Sample dermoscopic image 2'
   },
   {
     id: 'ISIC_0806140',
     src: '/attached_assets/PROVe_AI_ISIC_0806140.jpg',
-    alt: 'Sample dermoscopic image 3',
-    description: 'Atypical Nevus'
+    alt: 'Sample dermoscopic image 3'
   },
   {
     id: 'ISIC_0820400',
     src: '/attached_assets/PROVe_AI_ISIC_0820400.jpg',
-    alt: 'Sample dermoscopic image 4',
-    description: 'Melanoma Suspect'
+    alt: 'Sample dermoscopic image 4'
   }
 ];
 
@@ -248,28 +251,33 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-6">
-                  Click on any sample image below to analyze it with our AI system. These images are from the ISIC Archive and represent various types of skin lesions.
+                  Click any sample image to analyze it with our AI system. Images are from PROVe-AI's clinical validation study.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {SAMPLE_IMAGES.map((image) => (
-                    <div
-                      key={image.id}
-                      className="cursor-pointer group"
-                      onClick={() => handleSampleImageClick(image.src)}
-                    >
-                      <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 group-hover:border-cyan-400 transition-colors">
-                        <img
-                          src={image.src}
-                          alt={image.alt}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        />
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2 text-center">
-                        {image.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <Carousel className="w-full max-w-3xl mx-auto">
+                  <CarouselContent>
+                    {SAMPLE_IMAGES.map((image) => (
+                      <CarouselItem key={image.id} className="md:basis-1/2 lg:basis-1/3">
+                        <div
+                          className="cursor-pointer group px-2"
+                          onClick={() => handleSampleImageClick(image.src)}
+                        >
+                          <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 group-hover:border-cyan-400 transition-colors">
+                            <img
+                              src={image.src}
+                              alt={image.alt}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
+                <p className="text-xs text-gray-500 text-center mt-4">
+                  Images from PROVe-AI (DOI: <a href="https://doi.org/10.34970/576276" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">10.34970/576276</a>)
+                </p>
               </CardContent>
             </Card>
           </>
