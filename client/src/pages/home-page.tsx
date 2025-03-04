@@ -106,7 +106,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-50 to-white">
       <div className="container mx-auto px-4 py-4">
-        <div className="flex justify-end">
+        <div className="flex justify-end space-x-4">
           <Link href="/about">
             <a className="text-cyan-600 hover:text-cyan-700">About MaculaCutis →</a>
           </Link>
@@ -206,6 +206,11 @@ export default function HomePage() {
           </Card>
         )}
       </main>
+      <footer className="container mx-auto px-4 py-8 text-center text-sm text-gray-500">
+        <Link href="/privacy">
+          <a className="hover:text-cyan-600">Privacy Policy</a>
+        </Link>
+      </footer>
     </div>
   );
 }
