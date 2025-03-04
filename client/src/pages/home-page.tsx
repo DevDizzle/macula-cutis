@@ -1,9 +1,10 @@
+
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDropzone } from "react-dropzone";
 import { useCallback, useState } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, FileImage, ShieldCheck, Brain, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -15,33 +16,37 @@ const ACCEPTED_TYPES = {
   'image/png': ['.png']
 };
 
+// Helper function to process the image
+const processImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_IMAGE_SIZE) {
+      reject(new Error(`Image size must be less than ${MAX_IMAGE_SIZE / 1024 / 1024}MB`));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        resolve(e.target.result as string);
+      } else {
+        reject(new Error("Failed to read file"));
+      }
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+};
+
 export default function HomePage() {
-  const { user, logoutMutation } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
-  const processImage = useCallback((file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      if (file.size > MAX_IMAGE_SIZE) {
-        reject(new Error("Image size must be less than 1MB"));
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        // Ensure we have a proper base64 string
-        if (typeof result === 'string' && result.startsWith('data:image/')) {
-          resolve(result);
-        } else {
-          reject(new Error("Invalid image format"));
-        }
-      };
-      reader.onerror = () => reject(new Error("Failed to read image file"));
-      reader.readAsDataURL(file);
-    });
-  }, []);
+  const { data: analyses, isLoading: analysesLoading } = useQuery({
+    queryKey: ["analyses"],
+    queryFn: () => apiRequest<Analysis[]>({ url: "/api/analyses" }),
+  });
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -77,20 +82,21 @@ export default function HomePage() {
         throw new Error("Invalid image format");
       }
 
-      console.log("Sending image for analysis, length:", selectedImage.length);
-      const res = await apiRequest("POST", "/api/analyze", {
-        imageData: selectedImage,
+      return apiRequest<Analysis>({
+        url: "/api/analyze",
+        method: "POST",
+        data: { imageData: selectedImage },
       });
-      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
+      queryClient.invalidateQueries({ queryKey: ["analyses"] });
+      setSelectedImage(null);
       toast({
         title: "Analysis Complete",
-        description: "Your image has been analyzed successfully.",
+        description: "Your image has been successfully analyzed.",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Analysis Failed",
         description: error.message,
@@ -99,124 +105,134 @@ export default function HomePage() {
     },
   });
 
-  const { data: analyses, isLoading: isLoadingAnalyses } = useQuery<Analysis[]>({
-    queryKey: ["/api/analyses"],
-  });
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">2nd Opinion</h1>
-            <p className="text-sm text-gray-600">
-              Welcome, {user?.name} ({user?.title})
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => logoutMutation.mutate()}
-            disabled={logoutMutation.isPending}
-          >
-            Logout
-          </Button>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-50">
+      <header className="py-8 text-center">
+        <h1 className="text-3xl md:text-4xl font-bold text-blue-800 mb-2">
+          MaculaCutis – Your AI Second Opinion Tool for Dermoscopy
+        </h1>
+        <p className="text-slate-600 max-w-2xl mx-auto px-4">
+          Professional diagnostic support powered by advanced AI – designed specifically for dermatologists.
+        </p>
       </header>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Image</CardTitle>
+      
+      <main className="container mx-auto px-4 py-6 max-w-5xl">
+        <div className="grid gap-8">
+          <Card className="border border-blue-100 shadow-sm">
+            <CardHeader className="border-b border-blue-50 bg-blue-50/50">
+              <CardTitle className="text-blue-800">Upload Dermoscopic Image</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div
                 {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                  isDragActive ? "border-primary bg-primary/5" : "border-gray-200"
+                className={`border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors ${
+                  isDragActive ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-blue-300 hover:bg-blue-50/50"
                 } ${imageError ? "border-red-500" : ""}`}
               >
                 <input {...getInputProps()} />
-                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-sm text-gray-600">
-                  Drag & drop a dermoscopic image (JPEG/PNG, max 1MB), or click to select
+                <FileImage className="mx-auto h-16 w-16 text-blue-400 mb-4" />
+                <p className="text-slate-700 mb-2 font-medium">
+                  Upload dermoscopic image (PNG, JPG) for immediate assessment
+                </p>
+                <p className="text-sm text-slate-500">
+                  Drag & drop or click to select (max 1MB)
                 </p>
                 {imageError && (
                   <p className="text-sm text-red-500 mt-2">{imageError}</p>
                 )}
               </div>
 
-              {selectedImage && !imageError && (
-                <div className="mt-4 space-y-4">
-                  <img
-                    src={selectedImage}
-                    alt="Selected"
-                    className="rounded-lg max-h-64 mx-auto"
-                  />
+              {selectedImage && (
+                <div className="mt-6 text-center">
+                  <div className="mb-4 rounded-lg overflow-hidden inline-block border border-slate-200">
+                    <img
+                      src={selectedImage}
+                      alt="Selected dermoscopic image"
+                      className="max-h-64 max-w-full object-contain"
+                    />
+                  </div>
                   <Button
-                    className="w-full"
                     onClick={() => analyzeMutation.mutate()}
                     disabled={analyzeMutation.isPending}
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
                   >
                     {analyzeMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    Analyze Image
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      "Analyze Image"
+                    )}
                   </Button>
+                  <p className="text-slate-600 mt-4 text-sm italic">
+                    Quickly confirm your diagnostic intuition with an accurate, AI-powered second opinion.
+                  </p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Analysis History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingAnalyses ? (
-                <div className="text-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-                </div>
-              ) : analyses?.length === 0 ? (
-                <p className="text-center py-8 text-gray-500">
-                  No analyses yet. Upload an image to get started.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {analyses?.map((analysis) => (
-                    <div
-                      key={analysis.id}
-                      className="border rounded-lg p-4 space-y-2"
-                    >
-                      <div className="flex gap-4">
+          <div className="grid md:grid-cols-3 gap-4 my-8">
+            <div className="bg-white p-6 rounded-lg border border-slate-100 shadow-sm text-center">
+              <ShieldCheck className="h-10 w-10 mb-3 mx-auto text-blue-500" />
+              <h3 className="font-semibold text-slate-800 mb-2">Accurate Assessment</h3>
+              <p className="text-slate-600 text-sm">High precision AI analysis trained on validated dermatological datasets</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-slate-100 shadow-sm text-center">
+              <Brain className="h-10 w-10 mb-3 mx-auto text-teal-500" />
+              <h3 className="font-semibold text-slate-800 mb-2">Visual Insights</h3>
+              <p className="text-slate-600 text-sm">Explainable AI with heatmap visualization of key diagnostic features</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-slate-100 shadow-sm text-center">
+              <Clock className="h-10 w-10 mb-3 mx-auto text-indigo-500" />
+              <h3 className="font-semibold text-slate-800 mb-2">Instant Results</h3>
+              <p className="text-slate-600 text-sm">Receive analysis within seconds to support your clinical workflow</p>
+            </div>
+          </div>
+
+          {analysesLoading ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500" />
+              <p className="text-slate-500 mt-2">Loading your previous analyses...</p>
+            </div>
+          ) : analyses && analyses.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Analyses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {analyses.map((analysis) => (
+                    <Card key={analysis.id} className="overflow-hidden">
+                      <div className="aspect-square relative">
                         <img
                           src={analysis.imageData}
-                          alt="Analysis"
-                          className="w-24 h-24 object-cover rounded"
+                          alt="Analyzed dermoscopic image"
+                          className="object-cover w-full h-full"
                         />
-                        <div>
-                          <p className="font-medium">{analysis.prediction}</p>
-                          <p className="text-sm text-gray-600">
-                            Confidence: {analysis.confidence}%
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {new Date(analysis.createdAt).toLocaleString()}
-                          </p>
-                        </div>
                       </div>
-                      <img
-                        src={analysis.heatmapData}
-                        alt="Heatmap"
-                        className="w-full rounded"
-                      />
-                    </div>
+                      <div className="p-3">
+                        <p className="font-medium">{analysis.prediction}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Confidence: {analysis.confidence}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(analysis.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </Card>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </main>
+
+      <footer className="mt-auto py-6 text-center text-slate-500 text-sm">
+        <p>© {new Date().getFullYear()} MaculaCutis - Professional AI tool for dermatologists</p>
+      </footer>
     </div>
   );
 }

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaculaCutis - AI Second Opinion</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MaculaCutis – Your AI Second Opinion Tool for Dermoscopy</h1>
+        </header>
+        <main>
+            <div class="upload-area">
+                <input type="file" accept="image/png, image/jpeg" id="imageUpload">
+                <label for="imageUpload">Upload dermoscopic image (PNG, JPG) for immediate assessment</label>
+            </div>
+            <p class="tagline">Quickly confirm your diagnostic intuition with an accurate, AI-powered second opinion.</p>
+        </main>
+        <footer>
+            <p>&copy; 2023 MaculaCutis</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+
+/* style.css */
+body {
+    font-family: sans-serif;
+    margin: 0;
+    background-color: #f4f4f4; /* Light neutral background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+header h1 {
+    color: #336699; /* Soft blue */
+    font-size: 2.5em;
+    margin-bottom: 30px;
+}
+
+.upload-area {
+    background-color: #e0f2f7; /* Light blue upload area */
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.upload-area input[type="file"] {
+    display: none;
+}
+
+.upload-area label {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.tagline {
+    color: #558b2f; /* Soft green */
+    font-style: italic;
+    margin-top: 10px;
+}
+
+footer {
+    margin-top: 40px;
+    font-size: 0.8em;
+    color: #777;
+}
+
+
+/* home-page.css */
+/* Your custom styles for the homepage can go here */
+
+
+/* script.js */
+// Add JavaScript functionality for image upload and processing here.
