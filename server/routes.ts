@@ -1,16 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertAnalysisSchema } from "@shared/schema";
 import { classifyImage, generateHeatmap } from "./ml-classifier";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  setupAuth(app);
-
   app.post("/api/analyze", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
     try {
       console.log("Starting analysis request...");
       const parsed = insertAnalysisSchema.safeParse(req.body);
@@ -28,11 +23,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const heatmap = await generateHeatmap(imageData);
       console.log("Heatmap generated");
 
+      // Store without user association for now
       const analysis = await storage.createAnalysis({
-        userId: req.user!.id,
         imageData,
         prediction: prediction.label,
-        confidence: Math.round(prediction.confidence * 100),
+        confidence: prediction.confidence,
         heatmapData: heatmap,
       });
 
