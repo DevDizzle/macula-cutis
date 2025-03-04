@@ -2,6 +2,7 @@ import { GoogleAuth } from 'google-auth-library';
 import axios from 'axios';
 import { spawn } from 'child_process';
 import { promisify } from 'util';
+import * as path from 'path';
 
 // Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
@@ -96,10 +97,13 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
  */
 export async function generateHeatmap(imageData: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const python = spawn('python3', ['server/heatmap_generator.py']);
+    // Use absolute path to Python script
+    const scriptPath = path.join(process.cwd(), 'server', 'heatmap_generator.py');
+    const python = spawn('python3', [scriptPath]);
     let result = '';
     let error = '';
 
+    // Send input data
     python.stdin.write(JSON.stringify({ image_data: imageData }));
     python.stdin.end();
 
@@ -109,20 +113,36 @@ export async function generateHeatmap(imageData: string): Promise<string> {
 
     python.stderr.on('data', (data) => {
       error += data.toString();
+      console.error('Python stderr:', data.toString());
     });
 
     python.on('close', (code) => {
+      console.log('Python process exited with code:', code);
+      console.log('Python stdout:', result);
+
       if (code !== 0) {
         console.error("Python heatmap generation error:", error);
-        reject(new Error(`Heatmap generation failed: ${error}`));
+        reject(new Error(`Heatmap generation failed with code ${code}: ${error}`));
         return;
       }
+
       try {
         const heatmapData = JSON.parse(result.trim());
+        if (heatmapData.status === 'error') {
+          reject(new Error(heatmapData.error));
+          return;
+        }
         resolve(heatmapData.heatmap);
       } catch (e) {
+        console.error('Failed to parse heatmap data:', e);
+        console.error('Raw result:', result);
         reject(new Error('Failed to parse heatmap data'));
       }
+    });
+
+    python.on('error', (err) => {
+      console.error('Failed to start Python process:', err);
+      reject(err);
     });
   });
 }
