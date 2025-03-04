@@ -84,6 +84,11 @@ export default function PrivacyPolicy() {
             </CardContent>
           </Card>
         </div>
+        <footer className="mt-12 text-center text-sm text-gray-500 space-x-4">
+          <Link href="/terms">
+            <a className="hover:text-cyan-600">Terms of Use</a>
+          </Link>
+        </footer>
       </main>
     </div>
   );

@@ -209,9 +209,13 @@ export default function HomePage() {
           </Card>
         )}
       </main>
-      <footer className="container mx-auto px-4 py-8 text-center text-sm text-gray-500">
+      <footer className="container mx-auto px-4 py-8 text-center text-sm text-gray-500 space-x-4">
         <Link href="/privacy">
           <a className="hover:text-cyan-600">Privacy Policy</a>
+        </Link>
+        <span>•</span>
+        <Link href="/terms">
+          <a className="hover:text-cyan-600">Terms of Use</a>
         </Link>
       </footer>
     </div>

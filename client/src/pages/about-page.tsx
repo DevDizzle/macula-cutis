@@ -116,9 +116,13 @@ export default function AboutPage() {
             </CardContent>
           </Card>
         </div>
-        <footer className="mt-12 text-center text-sm text-gray-500">
+        <footer className="mt-12 text-center text-sm text-gray-500 space-x-4">
           <Link href="/privacy">
             <a className="hover:text-cyan-600">Privacy Policy</a>
+          </Link>
+          <span>•</span>
+          <Link href="/terms">
+            <a className="hover:text-cyan-600">Terms of Use</a>
           </Link>
         </footer>
       </main>
