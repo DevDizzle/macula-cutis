@@ -251,7 +251,7 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-6">
-                  Click any sample image to analyze it with our AI system. Images are from PROVe-AI's clinical validation study.
+                  Click any sample image to analyze it with our AI system. These images are from <a href="https://doi.org/10.34970/576276" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">PROVe-AI's clinical validation study</a>.
                 </p>
                 <Carousel className="w-full max-w-3xl mx-auto">
                   <CarouselContent>
@@ -275,9 +275,6 @@ export default function HomePage() {
                   <CarouselPrevious />
                   <CarouselNext />
                 </Carousel>
-                <p className="text-xs text-gray-500 text-center mt-4">
-                  Images from PROVe-AI (DOI: <a href="https://doi.org/10.34970/576276" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">10.34970/576276</a>)
-                </p>
               </CardContent>
             </Card>
           </>
