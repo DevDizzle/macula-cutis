@@ -104,3 +104,96 @@ export function useAuth() {
   }
   return context;
 }
+import React, { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios";
+
+type User = {
+  id: string;
+  email: string;
+  name: string;
+};
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get("/api/auth/me");
+        setUser(response.data);
+      } catch (err) {
+        // User is not authenticated
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    setError(null);
+    try {
+      const response = await axios.post("/api/auth/login", { email, password });
+      setUser(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Login failed");
+      throw err;
+    }
+  };
+
+  const register = async (name: string, email: string, password: string) => {
+    setError(null);
+    try {
+      const response = await axios.post("/api/auth/register", { name, email, password });
+      setUser(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Registration failed");
+      throw err;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await axios.post("/api/auth/logout");
+      setUser(null);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Logout failed");
+    }
+  };
+
+  const value = {
+    user,
+    isLoading,
+    error,
+    login,
+    register,
+    logout
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
+
+export default useAuth;
