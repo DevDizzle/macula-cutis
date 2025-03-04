@@ -10,13 +10,13 @@ const ENDPOINT_ID = "903117960334278656";
 const predictionClient = new PredictionServiceClient({
   projectId: PROJECT_ID,
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-  apiEndpoint: "us-central1-aiplatform.googleapis.com",
+  apiEndpoint: "us-central1-aiplatform.googleapis.com", // Critical for regional endpoints
   scopes: ['https://www.googleapis.com/auth/cloud-platform']
 });
 
 /**
  * Classify an uploaded image using Vertex AI AutoML
- * @param {string} imageData - Base64 encoded image data
+ * @param {string} imageData - Base64 encoded image data (with or without data URL prefix)
  * @returns {Promise<{ label: string, confidence: number }>}
  */
 export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
@@ -28,18 +28,18 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
       ? imageData.split(",")[1]
       : imageData;
 
-    // Validate base64 string
+    // Validate Base64 string
     if (!base64Image || base64Image.trim().length === 0) {
-      throw new Error("Invalid base64 image data");
+      throw new Error('Invalid base64 image data');
     }
     console.log("Base64 image length:", base64Image.length);
 
-    // Construct the endpoint path
+    // Construct the endpoint path exactly as in test-endpoint.sh
     const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
     console.log("Using endpoint:", endpoint);
     console.log("API Endpoint:", "us-central1-aiplatform.googleapis.com");
 
-    // Format request to match the working curl example
+    // Format request to exactly match the working curl example
     const request = {
       name: endpoint,
       instances: [
@@ -72,7 +72,6 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
       throw new Error("Invalid prediction format returned from the model");
     }
 
-    // Extract prediction results using the verified response format
     return {
       label: prediction.displayNames[0],
       confidence: prediction.confidences[0]
@@ -84,7 +83,10 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
       name: error instanceof Error ? error.name : "UnknownError",
       code: error.code,
       details: error.details,
-      metadata: error.metadata
+      metadata: error.metadata,
+      reason: error.reason,
+      domain: error.domain,
+      errorInfoMetadata: error.errorInfoMetadata
     });
     throw new Error(`Failed to classify image: ${error instanceof Error ? error.message : String(error)}`);
   }
