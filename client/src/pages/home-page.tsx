@@ -116,6 +116,15 @@ export default function HomePage() {
         </div>
       </div>
       <main className="container mx-auto px-4 py-12 max-w-5xl">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            MaculaCutis – Your AI-Powered Second Opinion for Dermoscopy
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Quickly confirm your diagnostic intuition with fast, accurate insights from advanced AI.
+          </p>
+        </div>
+
         {!analyzeMutation.data ? (
           <Card className="bg-white shadow-xl border-0 mb-8">
             <CardContent className="p-8">
