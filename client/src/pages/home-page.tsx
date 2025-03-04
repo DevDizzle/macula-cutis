@@ -108,7 +108,10 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-end space-x-4">
           <Link href="/about">
-            <a className="text-cyan-600 hover:text-cyan-700">About MaculaCutis →</a>
+            <a className="text-cyan-600 hover:text-cyan-700">About MaculaCutis</a>
+          </Link>
+          <Link href="/contact">
+            <a className="text-cyan-600 hover:text-cyan-700">Contact Us</a>
           </Link>
         </div>
       </div>
