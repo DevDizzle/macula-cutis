@@ -24,22 +24,22 @@ const ACCEPTED_TYPES = {
 const SAMPLE_IMAGES = [
   {
     id: 'ISIC_0098024',
-    src: '/attached_assets/PROVe_AI_ISIC_0098024.jpg',
+    src: '/PROVe_AI_ISIC_0098024.jpg',
     alt: 'Sample dermoscopic image 1'
   },
   {
     id: 'ISIC_0429987',
-    src: '/attached_assets/PROVe_AI_ISIC_0429987.jpg',
+    src: '/PROVe_AI_ISIC_0429987.jpg',
     alt: 'Sample dermoscopic image 2'
   },
   {
     id: 'ISIC_0806140',
-    src: '/attached_assets/PROVe_AI_ISIC_0806140.jpg',
+    src: '/PROVe_AI_ISIC_0806140.jpg',
     alt: 'Sample dermoscopic image 3'
   },
   {
     id: 'ISIC_0820400',
-    src: '/attached_assets/PROVe_AI_ISIC_0820400.jpg',
+    src: '/PROVe_AI_ISIC_0820400.jpg',
     alt: 'Sample dermoscopic image 4'
   }
 ];
@@ -253,10 +253,10 @@ export default function HomePage() {
                 <p className="text-gray-600 mb-6">
                   Click any sample image to analyze it with our AI system. These images are from <a href="https://doi.org/10.34970/576276" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">PROVe-AI's clinical validation study</a>.
                 </p>
-                <Carousel className="w-full max-w-3xl mx-auto">
+                <Carousel className="w-full max-w-xl mx-auto">
                   <CarouselContent>
                     {SAMPLE_IMAGES.map((image) => (
-                      <CarouselItem key={image.id} className="md:basis-1/2 lg:basis-1/3">
+                      <CarouselItem key={image.id} className="basis-1/2">
                         <div
                           className="cursor-pointer group px-2"
                           onClick={() => handleSampleImageClick(image.src)}
