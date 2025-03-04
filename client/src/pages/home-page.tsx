@@ -189,7 +189,30 @@ export default function HomePage() {
                 <p className="text-xl text-gray-600 mb-6">
                   Probability: {Math.round(analyzeMutation.data.confidence * 100)}%
                 </p>
-                <div className="max-w-2xl mx-auto bg-gray-50 rounded-lg p-6 mb-8">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Original Image</h3>
+                    <img
+                      src={selectedImage}
+                      alt="Original dermoscopic image"
+                      className="rounded-lg shadow-lg"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Region Analysis</h3>
+                    <img
+                      src={analyzeMutation.data.heatmapData}
+                      alt="Analysis heatmap"
+                      className="rounded-lg shadow-lg"
+                    />
+                    <p className="text-sm text-gray-600 mt-2">
+                      Highlighted regions show areas of interest for the analysis
+                    </p>
+                  </div>
+                </div>
+
+                <div className="max-w-2xl mx-auto bg-gray-50 rounded-lg p-6 mt-8">
                   <p className="text-gray-700">
                     {getRecommendation(
                       analyzeMutation.data.prediction,
@@ -197,9 +220,10 @@ export default function HomePage() {
                     )}
                   </p>
                 </div>
+
                 <button
                   onClick={resetAnalysis}
-                  className="flex items-center justify-center mx-auto px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+                  className="mt-8 flex items-center justify-center mx-auto px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
                 >
                   <ArrowUpCircle className="w-5 h-5 mr-2" />
                   Analyze Another Image

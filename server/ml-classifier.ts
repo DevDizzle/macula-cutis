@@ -1,6 +1,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import axios from 'axios';
-import { createCanvas } from "canvas";
+import { spawn } from 'child_process';
+import { promisify } from 'util';
 
 // Google Cloud Project Details
 const PROJECT_ID = "skin-lesion-443301";
@@ -10,13 +11,13 @@ const ENDPOINT_ID = "903117960334278656";
 /**
  * Classify an uploaded image using Vertex AI AutoML
  * @param {string} imageData - Base64 encoded image data (with or without data URL prefix)
- * @returns {Promise<{ label: string, confidence: number }>}
+ * @returns {Promise<{ label: string; confidence: number }>}
  */
 export async function classifyImage(imageData: string): Promise<{ label: string; confidence: number }> {
   try {
     console.log("Starting image classification...");
 
-    // Remove the data URL prefix if present (e.g., "data:image/jpeg;base64,")
+    // Remove the data URL prefix if present
     const base64Image = imageData.startsWith('data:image/')
       ? imageData.split(",")[1]
       : imageData;
@@ -37,13 +38,13 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     const accessToken = await auth.getAccessToken();
     console.log("Got access token");
 
-    // Construct endpoint URL exactly as in test-endpoint.sh
+    // Construct endpoint URL
     const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
     const apiUrl = `https://${LOCATION}-aiplatform.googleapis.com/v1/${endpoint}:predict`;
 
     console.log("Using API URL:", apiUrl);
 
-    // Make request using the exact format from test-endpoint.sh
+    // Make prediction request
     const response = await axios.post(
       apiUrl,
       {
@@ -89,17 +90,39 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
 }
 
 /**
- * Generate a placeholder heatmap (for SHAP/Grad-CAM)
+ * Generate a heatmap overlay using Python matplotlib
  * @param {string} imageData - Base64 encoded image data
  * @returns {Promise<string>} - Heatmap overlay as a Base64 image
  */
 export async function generateHeatmap(imageData: string): Promise<string> {
-  const canvas = createCanvas(224, 224);
-  const ctx = canvas.getContext("2d");
+  return new Promise((resolve, reject) => {
+    const python = spawn('python3', ['server/heatmap_generator.py']);
+    let result = '';
+    let error = '';
 
-  // Draw red overlay for areas of interest (placeholder)
-  ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
-  ctx.fillRect(56, 56, 112, 112);
+    python.stdin.write(JSON.stringify({ image_data: imageData }));
+    python.stdin.end();
 
-  return canvas.toDataURL();
+    python.stdout.on('data', (data) => {
+      result += data.toString();
+    });
+
+    python.stderr.on('data', (data) => {
+      error += data.toString();
+    });
+
+    python.on('close', (code) => {
+      if (code !== 0) {
+        console.error("Python heatmap generation error:", error);
+        reject(new Error(`Heatmap generation failed: ${error}`));
+        return;
+      }
+      try {
+        const heatmapData = JSON.parse(result.trim());
+        resolve(heatmapData.heatmap);
+      } catch (e) {
+        reject(new Error('Failed to parse heatmap data'));
+      }
+    });
+  });
 }
