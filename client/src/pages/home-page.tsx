@@ -5,6 +5,7 @@ import { Loader2, Upload, AlertTriangle, CheckCircle2, ArrowUpCircle } from "luc
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 
 const MAX_IMAGE_SIZE = 1024 * 1024; // 1MB
 const ACCEPTED_TYPES = {
@@ -104,16 +105,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-50 to-white">
-      <main className="container mx-auto px-4 py-12 max-w-5xl">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            MaculaCutis – Your AI Second Opinion Tool for Dermoscopy
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Quickly confirm your diagnostic intuition with an accurate, AI-powered second opinion.
-          </p>
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex justify-end">
+          <Link href="/about">
+            <a className="text-cyan-600 hover:text-cyan-700">About MaculaCutis →</a>
+          </Link>
         </div>
-
+      </div>
+      <main className="container mx-auto px-4 py-12 max-w-5xl">
         {!analyzeMutation.data ? (
           <Card className="bg-white shadow-xl border-0 mb-8">
             <CardContent className="p-8">
