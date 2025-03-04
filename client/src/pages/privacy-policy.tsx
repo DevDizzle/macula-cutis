@@ -6,10 +6,8 @@ export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-50 to-white">
       <main className="container mx-auto px-4 py-12 max-w-4xl">
-        <Link href="/">
-          <a className="text-cyan-600 hover:text-cyan-700 mb-8 inline-flex items-center">
-            ← Back to Analysis
-          </a>
+        <Link href="/" className="text-cyan-600 hover:text-cyan-700 mb-8 inline-flex items-center">
+          ← Back to Analysis
         </Link>
 
         <div className="text-center mb-12">
@@ -85,8 +83,8 @@ export default function PrivacyPolicy() {
           </Card>
         </div>
         <footer className="mt-12 text-center text-sm text-gray-500 space-x-4">
-          <Link href="/terms">
-            <a className="hover:text-cyan-600">Terms of Use</a>
+          <Link href="/terms" className="hover:text-cyan-600">
+            Terms of Use
           </Link>
         </footer>
       </main>

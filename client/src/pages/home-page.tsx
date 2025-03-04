@@ -107,11 +107,11 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-b from-cyan-50 to-white">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-end space-x-4">
-          <Link href="/about">
-            <a className="text-cyan-600 hover:text-cyan-700">About MaculaCutis</a>
+          <Link href="/about" className="text-cyan-600 hover:text-cyan-700">
+            About MaculaCutis
           </Link>
-          <Link href="/contact">
-            <a className="text-cyan-600 hover:text-cyan-700">Contact Us</a>
+          <Link href="/contact" className="text-cyan-600 hover:text-cyan-700">
+            Contact Us
           </Link>
         </div>
       </div>
@@ -210,12 +210,12 @@ export default function HomePage() {
         )}
       </main>
       <footer className="container mx-auto px-4 py-8 text-center text-sm text-gray-500 space-x-4">
-        <Link href="/privacy">
-          <a className="hover:text-cyan-600">Privacy Policy</a>
+        <Link href="/privacy" className="hover:text-cyan-600">
+          Privacy Policy
         </Link>
         <span>•</span>
-        <Link href="/terms">
-          <a className="hover:text-cyan-600">Terms of Use</a>
+        <Link href="/terms" className="hover:text-cyan-600">
+          Terms of Use
         </Link>
       </footer>
     </div>
