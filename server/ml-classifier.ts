@@ -10,7 +10,6 @@ const ENDPOINT_ID = "903117960334278656";
 const predictionClient = new PredictionServiceClient({
   projectId: PROJECT_ID,
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-  apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
   scopes: ['https://www.googleapis.com/auth/cloud-platform']
 });
 
@@ -29,7 +28,7 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     // Construct the endpoint path
     const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
 
-    // Format request according to the REST API format
+    // Format request to match the working curl example
     const request = {
       name: endpoint,
       instances: [
@@ -58,22 +57,25 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     }
 
     const prediction = response.predictions[0];
-    console.log("Parsed prediction:", prediction);
+    if (!prediction.displayNames?.[0] || !prediction.confidences?.[0]) {
+      throw new Error("Invalid prediction format returned from the model");
+    }
 
-    // Extract prediction results based on observed response format
+    // Extract prediction results using the verified response format
     return {
-      label: prediction.displayNames?.[0] || "unknown",
-      confidence: prediction.confidences?.[0] || 0
+      label: prediction.displayNames[0],
+      confidence: prediction.confidences[0]
     };
   } catch (error: any) {
     console.error("Error in classifyImage:", error);
     console.error("Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : "UnknownError",
       code: error.code,
       details: error.details,
-      metadata: error.metadata,
-      status: error.status
+      metadata: error.metadata
     });
-    throw new Error(`Failed to classify image: ${error.message}`);
+    throw new Error(`Failed to classify image: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
