@@ -22,11 +22,14 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
   try {
     console.log("Starting image classification...");
 
-    // Remove any Base64 prefix if present
-    const base64Image = imageData.split(",")[1] || imageData.replace(/^data:image\/\w+;base64,/, "");
+    // Remove the data URL prefix if present (e.g., "data:image/jpeg;base64,")
+    const base64Image = imageData.startsWith('data:image/')
+      ? imageData.split(",")[1]
+      : imageData;
 
     // Construct the endpoint path
     const endpoint = `projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/${ENDPOINT_ID}`;
+    console.log("Using endpoint:", endpoint);
 
     // Format request to match the working curl example
     const request = {
