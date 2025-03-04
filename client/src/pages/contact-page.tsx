@@ -69,7 +69,7 @@ export default function ContactPage() {
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Evan R. Parra" {...field} />
+                        <Input placeholder="Your name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -83,7 +83,7 @@ export default function ContactPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="admin@greedyroutes.com" {...field} />
+                        <Input placeholder="Your email address" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
