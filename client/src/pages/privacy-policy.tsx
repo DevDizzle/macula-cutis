@@ -76,7 +76,7 @@ export default function PrivacyPolicy() {
             <CardContent>
               <p className="text-amber-800">
                 We're here to answer your questions about privacy. Please reach out to:<br />
-                Email: eraphaelparra@gmail.com<br />
+                Email: admin@greedyroutes.com<br />
                 Contact: Evan R. Parra
               </p>
             </CardContent>

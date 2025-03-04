@@ -70,7 +70,7 @@ export default function TermsOfUse() {
             <CardContent>
               <p className="text-amber-800">
                 Questions or concerns? We're here to help:<br />
-                Email: eraphaelparra@gmail.com<br />
+                Email: admin@greedyroutes.com<br />
                 Contact: Evan R. Parra
               </p>
             </CardContent>
