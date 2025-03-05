@@ -12,6 +12,7 @@ const ENDPOINT_ID = "903117960334278656";
     // Initialize the client with credentials from environment variable
     const predictionClient = new PredictionServiceClient({
       projectId: PROJECT_ID,
+      credentials: process.env.GOOGLE_CREDENTIALS ? JSON.parse(process.env.GOOGLE_CREDENTIALS) : undefined,
       keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
       apiEndpoint: `${LOCATION}-aiplatform.googleapis.com`,
       scopes: ['https://www.googleapis.com/auth/cloud-platform']
