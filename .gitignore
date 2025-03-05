@@ -1,6 +1,58 @@
-node_modules
-dist
+
+# Dependencies
+node_modules/
+.npm/
+
+# Build files
+dist/
+build/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.p12
+*.json.key
+*-key.json
+*-credentials.json
+*-service-account.json
+*-9fd70b8d7c77.json
+skin-lesion-*.json
+
+# Testing files
+test-input.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Misc
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+.idea/
+.vscode/
+*.swp
+*.swo
+.replit.backup
