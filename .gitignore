@@ -1,19 +1,64 @@
-
 # Dependencies
-node_modules/
-.npm/
+node_modules
+.pnp
+.pnp.js
 
-# Build files
-dist/
-build/
+# Testing
+coverage
 
-# Environment variables and secrets
+# Production
+dist
+build
+
+# Misc
+.DS_Store
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 *.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Replit specific
+.replit
+.config
+.upm
+.breakpoints
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Local Netlify folder
+.netlify
+
+# Secret data
+attached_assets/skin-lesion-443301-*.json
+test-input.json
+
+# Logs
+logs/
+*.log
+
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Previous entries that are still relevant
 *.key
 *.p12
 *.json.key
@@ -22,37 +67,9 @@ build/
 *-service-account.json
 *-9fd70b8d7c77.json
 skin-lesion-*.json
-# Be more specific about the credentials file
-attached_assets/skin-lesion-443301-9fd70b8d7c77.json
 
-# Testing files
-test-input.json
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.Python
-env/
-venv/
-ENV/
-.venv
-
-# Misc
-.DS_Store
+#Misc
 .idea/
 .vscode/
 *.swp
