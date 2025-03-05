@@ -3,12 +3,13 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { join } from "path";
 
-// Set Google Cloud credentials path - use environment variables in production
-if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  // Only for development - this path should not be committed to GitHub
-  process.env.GOOGLE_APPLICATION_CREDENTIALS = join(process.cwd(), "attached_assets/skin-lesion-443301-9fd70b8d7c77.json");
+// Use environment variables for Google credentials
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  console.log("Using Google credentials from environment variable");
+} else {
+  console.warn("WARNING: No GOOGLE_APPLICATION_CREDENTIALS environment variable set");
+  // In production, this will fail without credentials
 }
-console.log("Using Google credentials from:", process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
 const app = express();
 
