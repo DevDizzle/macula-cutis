@@ -328,19 +328,23 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Original Image</h3>
-                    <img
-                      src={selectedImage ?? undefined}
-                      alt="Original dermoscopic image"
-                      className="rounded-lg shadow-lg"
-                    />
+                    <div className="w-full h-[300px] flex items-center justify-center">
+                      <img
+                        src={selectedImage ?? undefined}
+                        alt="Original dermoscopic image"
+                        className="rounded-lg shadow-lg max-h-full max-w-full object-contain"
+                      />
+                    </div>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Region Analysis</h3>
-                    <img
-                      src={analyzeMutation.data.heatmapData}
-                      alt="Analysis heatmap"
-                      className="rounded-lg shadow-lg"
-                    />
+                    <div className="w-full h-[300px] flex items-center justify-center">
+                      <img
+                        src={analyzeMutation.data.heatmapData}
+                        alt="Analysis heatmap"
+                        className="rounded-lg shadow-lg max-h-full max-w-full object-contain"
+                      />
+                    </div>
                     <p className="text-sm text-gray-600 mt-2">
                       Highlighted regions show areas of interest for the analysis
                     </p>
