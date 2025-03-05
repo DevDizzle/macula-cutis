@@ -31,7 +31,7 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
 
     // Initialize auth client with the service account credentials
     const auth = new GoogleAuth({
-      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS, // Fallback to keyFilename
       scopes: ['https://www.googleapis.com/auth/cloud-platform']
     });
 

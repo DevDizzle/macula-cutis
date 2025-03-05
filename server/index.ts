@@ -4,10 +4,12 @@ import { setupVite, serveStatic, log } from "./vite";
 import { join } from "path";
 
 // Use environment variables for Google credentials
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  console.log("Using Google credentials from environment variable");
+if (process.env.GOOGLE_CREDENTIALS) {
+  console.log("Using Google credentials from GOOGLE_CREDENTIALS environment variable");
+} else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  console.log("Using Google credentials from GOOGLE_APPLICATION_CREDENTIALS file path");
 } else {
-  console.warn("WARNING: No GOOGLE_APPLICATION_CREDENTIALS environment variable set");
+  console.warn("WARNING: No Google credentials available. ML classification will fail.");
   // In production, this will fail without credentials
 }
 

@@ -5,6 +5,15 @@ import { insertAnalysisSchema } from "@shared/schema";
 import { classifyImage, generateHeatmap } from "./ml-classifier";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      googleCredentials: process.env.GOOGLE_CREDENTIALS ? "available" : (process.env.GOOGLE_APPLICATION_CREDENTIALS ? "file-based" : "missing")
+    });
+  });
+  
   app.post("/api/analyze", async (req, res) => {
     try {
       console.log("Starting analysis request...");
