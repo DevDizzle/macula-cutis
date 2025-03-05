@@ -22,6 +22,8 @@ build/
 *-service-account.json
 *-9fd70b8d7c77.json
 skin-lesion-*.json
+# Be more specific about the credentials file
+attached_assets/skin-lesion-443301-9fd70b8d7c77.json
 
 # Testing files
 test-input.json
