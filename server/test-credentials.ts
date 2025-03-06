@@ -1,18 +1,24 @@
-
-import { getClient } from './ml-classifier';
+import { PredictionServiceClient } from "@google-cloud/aiplatform";
 
 async function testCredentials() {
   try {
     console.log("Testing Google Cloud credentials...");
-    
-    // Attempt to initialize the client
-    const client = await getClient();
+
+    if (!process.env.GOOGLE_CREDENTIALS) {
+      throw new Error("GOOGLE_CREDENTIALS environment variable is not set");
+    }
+
+    // Initialize the client with credentials from environment variable
+    const client = new PredictionServiceClient({
+      credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
+      apiEndpoint: 'us-central1-aiplatform.googleapis.com'
+    });
     console.log("✅ Successfully initialized PredictionServiceClient");
-    
+
     // List available endpoints as a further test
-    const parent = `projects/${process.env.GOOGLE_CLOUD_PROJECT || 'skin-lesion-443301'}/locations/us-central1`;
+    const parent = `projects/skin-lesion-443301/locations/us-central1`;
     console.log(`Attempting to list endpoints in ${parent}...`);
-    
+
     try {
       const [endpoints] = await client.listEndpoints({ parent });
       console.log(`✅ Successfully listed ${endpoints.length} endpoints`);
@@ -25,12 +31,10 @@ async function testCredentials() {
   } catch (error) {
     console.error("❌ Failed to initialize PredictionServiceClient:");
     console.error(error);
-    
-    // Check if environment variables are set
+
     console.log("\nEnvironment variable status:");
     console.log("GOOGLE_CREDENTIALS:", process.env.GOOGLE_CREDENTIALS ? "Set ✅" : "Not set ❌");
-    console.log("GOOGLE_APPLICATION_CREDENTIALS:", process.env.GOOGLE_APPLICATION_CREDENTIALS ? "Set ✅" : "Not set ❌");
-    
+
     console.log("\nPlease ensure you've set up your credentials correctly in the Replit Secrets tool.");
   }
 }

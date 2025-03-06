@@ -1,7 +1,6 @@
 import { GoogleAuth } from 'google-auth-library';
 import axios from 'axios';
 import { spawn } from 'child_process';
-import { promisify } from 'util';
 import * as path from 'path';
 
 // Google Cloud Project Details

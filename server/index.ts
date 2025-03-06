@@ -79,7 +79,7 @@ app.use((req, res, next) => {
   try {
     // First, attempt to kill any process that might be using our port
     log(`Checking for processes using port ${port}...`);
-    await killPort(port);
+    await killPort(Number(port));
     log(`Successfully cleared port ${port}`);
 
     // Now start the server
