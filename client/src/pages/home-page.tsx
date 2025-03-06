@@ -133,22 +133,14 @@ export default function HomePage() {
       return res.json();
     },
     onSuccess: (data) => {
-      if (data.status === "contact_required") {
-        toast({
-          title: "Limited Preview",
-          description: data.message,
-          duration: 10000, // Show for 10 seconds
-        });
-      } else {
-          toast({
-            title: "Analysis Complete",
-            description: `Prediction: ${data.prediction} (${Math.round(data.confidence * 100)}% confidence)`,
-          });
-      }
+      toast({
+        title: "Analysis Complete",
+        description: `Prediction: ${data.prediction} (${Math.round(data.confidence * 100)}% confidence)`,
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Request Failed",
+        title: "Analysis Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -204,7 +196,7 @@ export default function HomePage() {
             MaculaCutis – Your AI-Powered Second Opinion for Dermoscopy
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Currently in limited preview. Upload a sample image to request access to our AI analysis service.
+            Quickly confirm your diagnostic intuition with fast, accurate insights from advanced AI.
           </p>
         </div>
 
@@ -260,10 +252,10 @@ export default function HomePage() {
                     {analyzeMutation.isPending ? (
                       <div className="flex items-center justify-center">
                         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        Processing Request...
+                        Analyzing Image...
                       </div>
                     ) : (
-                      "Request Analysis Demo"
+                      "Analyze Image"
                     )}
                   </button>
                   <button
