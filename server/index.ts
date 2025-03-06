@@ -74,7 +74,7 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 5000;
 
   try {
     // First, attempt to kill any process that might be using our port
