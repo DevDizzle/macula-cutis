@@ -8,17 +8,23 @@ import killPort from 'kill-port';
 if (!process.env.GOOGLE_CREDENTIALS) {
   console.error("ERROR: GOOGLE_CREDENTIALS environment variable is not set");
   console.error("Please set the GOOGLE_CREDENTIALS environment variable with your Google Cloud service account credentials");
-  process.exit(1);
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
 }
 
-try {
-  // Validate that the credentials are valid JSON
-  JSON.parse(process.env.GOOGLE_CREDENTIALS);
-  console.log("✅ Google Cloud credentials validated successfully");
-} catch (error) {
-  console.error("ERROR: Invalid GOOGLE_CREDENTIALS format. Must be valid JSON");
-  console.error(error);
-  process.exit(1);
+if (process.env.GOOGLE_CREDENTIALS) {
+  try {
+    // Validate that the credentials are valid JSON
+    JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    console.log("✅ Google Cloud credentials validated successfully");
+  } catch (error) {
+    console.error("ERROR: Invalid GOOGLE_CREDENTIALS format. Must be valid JSON");
+    console.error(error);
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    }
+  }
 }
 
 const app = express();
@@ -74,10 +80,14 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const port = process.env.PORT || 5000;
+  const port = process.env.NODE_ENV === 'production'
+    ? (process.env.PORT || 5000)  // Use PORT env var or 5000 in production
+    : (process.env.PORT || 3001); // Use PORT env var or 3001 in development
 
   try {
     // First, attempt to kill any process that might be using our port
+    log(`Starting server in ${process.env.NODE_ENV || 'development'} mode`);
+    log(`Attempting to use port ${port}`);
     log(`Checking for processes using port ${port}...`);
     await killPort(Number(port));
     log(`Successfully cleared port ${port}`);
