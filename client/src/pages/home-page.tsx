@@ -241,23 +241,22 @@ export default function HomePage() {
                     />
                   </div>
                   <button
-                    className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-colors ${
-                      analyzeMutation.isPending
-                        ? "bg-cyan-400 cursor-not-allowed"
-                        : "bg-cyan-600 hover:bg-cyan-700"
-                    }`}
-                    onClick={() => analyzeMutation.mutate()}
-                    disabled={analyzeMutation.isPending}
+                    className="w-full py-4 px-6 rounded-lg text-white font-semibold bg-gray-400 cursor-not-allowed"
+                    disabled={true}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toast({
+                        title: "Analysis Temporarily Unavailable",
+                        description: "The analysis feature is currently disabled. Please check back later when the service is re-enabled.",
+                        variant: "destructive",
+                      });
+                    }}
                   >
-                    {analyzeMutation.isPending ? (
-                      <div className="flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        Analyzing Image...
-                      </div>
-                    ) : (
-                      "Analyze Image"
-                    )}
+                    Analysis Currently Unavailable
                   </button>
+                  <p className="text-sm text-gray-600 text-center">
+                    The analysis service is temporarily disabled. All functionality will be restored when the service endpoint is re-enabled.
+                  </p>
                   <button
                     onClick={resetAnalysis}
                     className="w-full py-2 px-4 text-cyan-600 hover:text-cyan-700 font-medium"
