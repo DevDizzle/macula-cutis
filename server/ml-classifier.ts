@@ -29,10 +29,13 @@ export async function classifyImage(imageData: string): Promise<{ label: string;
     }
     console.log("Base64 image length:", base64Image.length);
 
-    // Initialize auth client with the service account credentials
+    if (!process.env.GOOGLE_CREDENTIALS) {
+      throw new Error('Google Cloud credentials not found in environment variables');
+    }
+
+    // Initialize auth client with the service account credentials from environment variable
     const auth = new GoogleAuth({
-      credentials: process.env.GOOGLE_CREDENTIALS ? JSON.parse(process.env.GOOGLE_CREDENTIALS) : undefined,
-      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS, // Fallback to keyFilename if needed
+      credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
       scopes: ['https://www.googleapis.com/auth/cloud-platform']
     });
 
