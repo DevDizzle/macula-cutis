@@ -43,22 +43,8 @@ ENV/
 # Local Netlify folder
 .netlify
 
-# Secret data
-attached_assets/skin-lesion-443301-*.json
-test-input.json
-
-# Logs
-logs/
-*.log
-
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Previous entries that are still relevant
+# Secret data and credentials
+attached_assets/
 *.key
 *.p12
 *.json.key
@@ -67,9 +53,19 @@ pids/
 *-service-account.json
 *-9fd70b8d7c77.json
 skin-lesion-*.json
+test-input.json
 
+# Logs
+logs/
+*.log
 
-#Misc
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# IDE
 .idea/
 .vscode/
 *.swp
