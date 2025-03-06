@@ -82,7 +82,7 @@ app.use((req, res, next) => {
 
   const port = process.env.NODE_ENV === 'production'
     ? (process.env.PORT || 5000)  // Use PORT env var or 5000 in production
-    : (process.env.PORT || 3001); // Use PORT env var or 3001 in development
+    : (process.env.PORT || 5000); // Use PORT env var or 5000 in development
 
   try {
     // First, attempt to kill any process that might be using our port

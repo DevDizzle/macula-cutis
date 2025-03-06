@@ -48,12 +48,22 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async createAnalysis(
-    analysis: Omit<Analysis, "id" | "createdAt">,
-  ): Promise<Analysis> {
+  async createAnalysis({ 
+    imageData, 
+    prediction, 
+    confidence,
+    heatmapData,
+    userId,
+  }: {
+    imageData: string;
+    prediction: string;
+    confidence: number;
+    heatmapData?: string | null;
+    userId?: string;
+  }): Promise<Analysis> {
     const id = this.currentAnalysisId++;
     const createdAt = new Date();
-    const newAnalysis = { ...analysis, id, createdAt };
+    const newAnalysis = { ...{imageData, prediction, confidence, heatmapData, userId}, id, createdAt };
     this.analyses.set(id, newAnalysis);
     return newAnalysis;
   }

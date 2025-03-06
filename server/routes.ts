@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertAnalysisSchema } from "@shared/schema";
-import { classifyImage, generateHeatmap } from "./ml-classifier";
+import { classifyImage } from "./ml-classifier";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint
@@ -29,8 +29,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const prediction = await classifyImage(imageData);
       console.log("Prediction received:", prediction);
 
-      const heatmap = await generateHeatmap(imageData);
-      console.log("Heatmap generated");
+      // Heatmap functionality temporarily disabled
+      const heatmap = null;
+      console.log("Heatmap generation skipped");
 
       // Store without user association for now
       const analysis = await storage.createAnalysis({
